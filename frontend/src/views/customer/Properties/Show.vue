@@ -1,8 +1,10 @@
 <script setup>
 import { RouterLink, useRoute } from 'vue-router'
+import { useAuthStore } from '../../../stores/auth'
 
-const route = useRoute()
-const id = route.params.id
+const route     = useRoute()
+const id        = route.params.id
+const authStore = useAuthStore()
 
 const placeholderUnits = [
   { id: 101, name: 'Unit A1', area: '120 sqm', beds: 2, status: 'Available' },
@@ -16,7 +18,7 @@ const placeholderUnits = [
 
     <div class="sk-detail">
       <div class="sk-detail-img">🏢</div>
-      
+
       <div class="sk-header" style="border: none; padding: 0;">
         <h1>Luxury Property #{{ id }}</h1>
         <p>New Cairo, Egypt &bull; Villa</p>
@@ -35,7 +37,8 @@ const placeholderUnits = [
 
       <h3 class="sk-section-title">Description</h3>
       <p style="color: #6b7280; font-size: 0.925rem; line-height: 1.6;">
-        This is a placeholder description for the property. It features state-of-the-art amenities, a wonderful view, and is located in a prime neighborhood with excellent schools and shopping centers nearby.
+        This property features state-of-the-art amenities, a wonderful view, and is located in a prime
+        neighborhood with excellent schools and shopping centers nearby.
       </p>
 
       <div class="sk-toolbar" style="margin-top: 2rem;">
@@ -60,7 +63,9 @@ const placeholderUnits = [
               <td>{{ unit.area }}</td>
               <td>{{ unit.beds }}</td>
               <td>
-                <span class="sk-badge" :class="unit.status === 'Available' ? 'sk-badge-available' : 'sk-badge-sold'">{{ unit.status }}</span>
+                <span class="sk-badge" :class="unit.status === 'Available' ? 'sk-badge-available' : 'sk-badge-sold'">
+                  {{ unit.status }}
+                </span>
               </td>
               <td>
                 <RouterLink :to="`/units/${unit.id}`" class="sk-btn sk-btn-secondary">View Unit</RouterLink>
@@ -69,9 +74,17 @@ const placeholderUnits = [
           </tbody>
         </table>
       </div>
-      
-      <div style="margin-top: 2rem;">
-        <button class="sk-btn sk-btn-primary">Request Purchase (Demo)</button>
+
+      <!-- Request Purchase: visible only to authenticated customers -->
+      <div v-if="authStore.isCustomer()" style="margin-top: 2rem;">
+        <RouterLink to="/purchase-requests" class="sk-btn sk-btn-primary">Request Purchase</RouterLink>
+      </div>
+
+      <!-- Owner view note: owners browse only, management is in the Owner Portal -->
+      <div v-else-if="authStore.isOwner()" style="margin-top: 2rem;">
+        <RouterLink to="/owner/properties" class="sk-btn sk-btn-secondary">
+          Manage in Owner Portal
+        </RouterLink>
       </div>
     </div>
   </div>

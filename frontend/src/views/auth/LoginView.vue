@@ -23,12 +23,7 @@ async function doLogin() {
     })
 
     authStore.setAuth(data.user, data.token)
-
-    if (data.user.role === 'owner') {
-      router.push('/owner/dashboard')
-    } else {
-      router.push('/')
-    }
+    router.push('/')
   } catch (e) {
     const msg = e.response?.data?.message
                 || e.response?.data?.errors?.email?.[0]

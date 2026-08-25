@@ -1,9 +1,37 @@
 <script setup>
-const placeholderContracts = [
-  { id: 'CTR-2026-001', property: 'Downtown Penthouse', unit: 'Unit B2', date: 'Oct 15, 2026', status: 'Active' },
-  { id: 'CTR-2025-089', property: 'Nile View Apartment', unit: 'Floor 12, Apt 4', date: 'Dec 05, 2025', status: 'Closed' },
-]
+import { computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useContractsStore } from '../../../stores/contracts'
 import CustomerDashboardLayout from '../../../components/customer/CustomerDashboardLayout.vue'
+
+const contractsStore = useContractsStore()
+
+onMounted(async () => {
+  await contractsStore.fetchCustomerContracts()
+})
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function statusBadgeClass(status) {
+  const map = {
+    active:    'sk-badge-active',
+    signed:    'sk-badge-active',
+    pending:   'sk-badge-pending',
+    expired:   'sk-badge-rejected',
+    cancelled: 'sk-badge-rejected',
+    terminated: 'sk-badge-rejected',
+  }
+  return map[(status || '').toLowerCase()] || 'sk-badge-pending'
+}
+
+const activeCount    = computed(() => contractsStore.contracts.filter((c) => ['active', 'signed'].includes((c.status || '').toLowerCase())).length)
+const pendingCount   = computed(() => contractsStore.contracts.filter((c) => (c.status || '').toLowerCase() === 'pending').length)
+const expiredCount   = computed(() => contractsStore.contracts.filter((c) => ['expired', 'cancelled', 'terminated'].includes((c.status || '').toLowerCase())).length)
 </script>
 
 <template>
@@ -13,29 +41,81 @@ import CustomerDashboardLayout from '../../../components/customer/CustomerDashbo
       <p>View and manage your signed property contracts.</p>
     </div>
 
-    <div class="sk-table-wrap">
+    <!-- Summary Cards -->
+    <div v-if="!contractsStore.loading && !contractsStore.error && contractsStore.contracts.length > 0" class="dash-stats">
+      <div class="stat-card">
+        <div class="stat-value">{{ contractsStore.contracts.length }}</div>
+        <div class="stat-title">Total Contracts</div>
+      </div>
+      <div class="stat-card stat-card-green">
+        <div class="stat-value">{{ activeCount }}</div>
+        <div class="stat-title">Active</div>
+      </div>
+      <div class="stat-card stat-card-amber">
+        <div class="stat-value">{{ pendingCount }}</div>
+        <div class="stat-title">Pending</div>
+      </div>
+      <div class="stat-card stat-card-red">
+        <div class="stat-value">{{ expiredCount }}</div>
+        <div class="stat-title">Expired / Closed</div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="contractsStore.loading" class="sk-table-wrap">
+      <table class="sk-table">
+        <thead>
+          <tr><th>Contract ID</th><th>Property</th><th>Unit</th><th>Start Date</th><th>End Date</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="n in 4" :key="n">
+            <td v-for="c in 7" :key="c"><div class="skel-line"></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="contractsStore.error" class="empty-box empty-box-error">
+      <h3>Failed to load contracts</h3>
+      <p>{{ contractsStore.error }}</p>
+      <button class="sk-btn sk-btn-primary" @click="contractsStore.fetchCustomerContracts()">Retry</button>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="contractsStore.contracts.length === 0" class="empty-box">
+      <div class="empty-icon">📄</div>
+      <h3>No contracts yet</h3>
+      <p>Your contracts will appear here once a purchase request is approved and a contract is created.</p>
+      <RouterLink to="/purchase-requests" class="sk-btn sk-btn-primary" style="display: inline-block; margin-top: 1rem;">View Purchase Requests</RouterLink>
+    </div>
+
+    <!-- Table -->
+    <div v-else class="sk-table-wrap">
       <table class="sk-table">
         <thead>
           <tr>
             <th>Contract ID</th>
             <th>Property</th>
             <th>Unit</th>
-            <th>Date Signed</th>
+            <th>Start Date</th>
+            <th>End Date</th>
             <th>Status</th>
-            <th>Action</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="contract in placeholderContracts" :key="contract.id">
-            <td><strong>{{ contract.id }}</strong></td>
-            <td>{{ contract.property }}</td>
-            <td>{{ contract.unit }}</td>
-            <td>{{ contract.date }}</td>
+          <tr v-for="c in contractsStore.contracts" :key="c.id">
+            <td><strong>CTR-{{ String(c.id).padStart(4, '0') }}</strong></td>
+            <td>{{ c.unit?.property?.name || c.property?.name || '—' }}</td>
+            <td>{{ c.unit?.unit_number || '—' }}</td>
+            <td>{{ formatDate(c.start_date) }}</td>
+            <td>{{ formatDate(c.end_date) }}</td>
             <td>
-              <span class="sk-badge" :class="contract.status === 'Active' ? 'sk-badge-active' : 'sk-badge-rejected'">{{ contract.status }}</span>
+              <span class="sk-badge" :class="statusBadgeClass(c.status)">{{ c.status || 'N/A' }}</span>
             </td>
             <td>
-              <button class="sk-btn sk-btn-secondary">View Contract</button>
+              <RouterLink :to="`/contracts/${c.id}`" class="sk-btn sk-btn-secondary btn-sm">View</RouterLink>
             </td>
           </tr>
         </tbody>
@@ -43,3 +123,89 @@ import CustomerDashboardLayout from '../../../components/customer/CustomerDashbo
     </div>
   </CustomerDashboardLayout>
 </template>
+
+<style scoped>
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.stat-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1;
+}
+
+.stat-title {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.stat-card-green .stat-value { color: #059669; }
+.stat-card-amber .stat-value { color: #d97706; }
+.stat-card-red   .stat-value { color: #dc2626; }
+
+.empty-box {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.empty-box-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.empty-box h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.5rem;
+}
+
+.empty-box p {
+  color: #64748b;
+  font-size: 0.9rem;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.btn-sm {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.skel-line {
+  height: 14px;
+  width: 80%;
+  background: #e2e8f0;
+  border-radius: 4px;
+  animation: skel-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skel-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+</style>

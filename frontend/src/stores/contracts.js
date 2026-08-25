@@ -77,6 +77,41 @@ export const useContractsStore = defineStore('contracts', () => {
     }
   }
 
+  // -- Customer actions ----------------------------------------
+
+  async function fetchCustomerContracts(params = {}) {
+    loading.value = true
+    resetError()
+    try {
+      const res = await getCustomerContracts(params)
+      const extracted = extractData(res)
+      contracts.value = extracted.data
+      meta.value = extracted.meta
+      links.value = extracted.links
+      return extracted.data
+    } catch (e) {
+      error.value = e.response?.data?.message || e.message
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchCustomerContract(id) {
+    loading.value = true
+    resetError()
+    try {
+      const res = await getCustomerContract(id)
+      contract.value = res.data?.data || res.data
+      return contract.value
+    } catch (e) {
+      error.value = e.response?.data?.message || e.message
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   // -- Unified fetch ------------------------------------------
 
   async function fetchContracts(params = {}) {
@@ -84,7 +119,7 @@ export const useContractsStore = defineStore('contracts', () => {
     if (auth.isOwner()) {
       return fetchOwnerContracts(params)
     }
-    return fetchCustomerContracts()
+    return fetchCustomerContracts(params)
   }
 
   async function fetchContract(id) {
@@ -105,6 +140,9 @@ export const useContractsStore = defineStore('contracts', () => {
 
     fetchOwnerContracts,
     fetchOwnerContract,
+
+    fetchCustomerContracts,
+    fetchCustomerContract,
 
     fetchContracts,
     fetchContract,

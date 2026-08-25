@@ -1,8 +1,10 @@
 <script setup>
 import { RouterLink, useRoute } from 'vue-router'
+import { useAuthStore } from '../../../stores/auth'
 
-const route = useRoute()
-const id = route.params.id
+const route     = useRoute()
+const id        = route.params.id
+const authStore = useAuthStore()
 </script>
 
 <template>
@@ -12,7 +14,7 @@ const id = route.params.id
     <div class="sk-detail">
       <div class="sk-header">
         <h1>Unit #{{ id }}</h1>
-        <p>Luxury Property (Placeholder)</p>
+        <p>Luxury Property</p>
       </div>
 
       <div class="sk-detail-img" style="height: 160px; font-size: 2rem;">🚪</div>
@@ -40,8 +42,16 @@ const id = route.params.id
         </div>
       </div>
 
-      <div style="margin-top: 2rem;">
-        <button class="sk-btn sk-btn-primary">Request Purchase</button>
+      <!-- Request Purchase: visible only to authenticated customers -->
+      <div v-if="authStore.isCustomer()" style="margin-top: 2rem;">
+        <RouterLink to="/purchase-requests" class="sk-btn sk-btn-primary">Request Purchase</RouterLink>
+      </div>
+
+      <!-- Owner view note -->
+      <div v-else-if="authStore.isOwner()" style="margin-top: 2rem;">
+        <RouterLink to="/owner/units" class="sk-btn sk-btn-secondary">
+          Manage in Owner Portal
+        </RouterLink>
       </div>
     </div>
   </div>
