@@ -1,11 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: () => import('../views/public/HomeView.vue'),
-  },
+  // -------------------------------------------------------
+  // Auth
+  // -------------------------------------------------------
   {
     path: '/login',
     name: 'login',
@@ -16,56 +14,209 @@ const routes = [
     name: 'register',
     component: () => import('../views/auth/RegisterView.vue'),
   },
+
+  // -------------------------------------------------------
+  // Owner area
+  // -------------------------------------------------------
   {
-    path: '/dashboard',
-    name: 'dashboard',
-    component: () => import('../views/dashboard/DashboardView.vue'),
+    path: '/owner',
+    component: () => import('../layouts/OwnerLayout.vue'),
+    children: [
+      { path: '',          redirect: '/owner/dashboard' },
+      {
+        path: 'dashboard',
+        name: 'owner.dashboard',
+        component: () => import('../views/owner/Dashboard.vue'),
+      },
+
+      // Properties
+      {
+        path: 'properties',
+        name: 'owner.properties.index',
+        component: () => import('../views/owner/Properties/Index.vue'),
+      },
+      {
+        path: 'properties/create',
+        name: 'owner.properties.create',
+        component: () => import('../views/owner/Properties/Create.vue'),
+      },
+      {
+        path: 'properties/:id',
+        name: 'owner.properties.show',
+        component: () => import('../views/owner/Properties/Show.vue'),
+      },
+      {
+        path: 'properties/:id/edit',
+        name: 'owner.properties.edit',
+        component: () => import('../views/owner/Properties/Edit.vue'),
+      },
+
+      // Units
+      {
+        path: 'units',
+        name: 'owner.units.index',
+        component: () => import('../views/owner/Units/Index.vue'),
+      },
+      {
+        path: 'units/create',
+        name: 'owner.units.create',
+        component: () => import('../views/owner/Units/Create.vue'),
+      },
+      {
+        path: 'units/:id/edit',
+        name: 'owner.units.edit',
+        component: () => import('../views/owner/Units/Edit.vue'),
+      },
+
+      // Customers
+      {
+        path: 'customers',
+        name: 'owner.customers.index',
+        component: () => import('../views/owner/Customers/Index.vue'),
+      },
+      {
+        path: 'customers/:id',
+        name: 'owner.customers.show',
+        component: () => import('../views/owner/Customers/Show.vue'),
+      },
+
+      // Purchase Requests
+      {
+        path: 'purchase-requests',
+        name: 'owner.purchase-requests.index',
+        component: () => import('../views/owner/PurchaseRequests/Index.vue'),
+      },
+      {
+        path: 'purchase-requests/:id',
+        name: 'owner.purchase-requests.show',
+        component: () => import('../views/owner/PurchaseRequests/Show.vue'),
+      },
+
+      // Contracts
+      {
+        path: 'contracts',
+        name: 'owner.contracts.index',
+        component: () => import('../views/owner/Contracts/Index.vue'),
+      },
+      {
+        path: 'contracts/create',
+        name: 'owner.contracts.create',
+        component: () => import('../views/owner/Contracts/Create.vue'),
+      },
+      {
+        path: 'contracts/:id',
+        name: 'owner.contracts.show',
+        component: () => import('../views/owner/Contracts/Show.vue'),
+      },
+
+      // Payments
+      {
+        path: 'payments',
+        name: 'owner.payments.index',
+        component: () => import('../views/owner/Payments/Index.vue'),
+      },
+      {
+        path: 'payments/create',
+        name: 'owner.payments.create',
+        component: () => import('../views/owner/Payments/Create.vue'),
+      },
+      {
+        path: 'payments/:id',
+        name: 'owner.payments.show',
+        component: () => import('../views/owner/Payments/Show.vue'),
+      },
+    ],
   },
+
+  // -------------------------------------------------------
+  // Customer area
+  // -------------------------------------------------------
   {
-    path: '/properties',
-    name: 'properties',
-    component: () => import('../views/properties/PropertiesView.vue'),
+    path: '/',
+    component: () => import('../layouts/CustomerLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'customer.home',
+        component: () => import('../views/customer/Home.vue'),
+      },
+
+      // Properties
+      {
+        path: 'properties',
+        name: 'customer.properties.index',
+        component: () => import('../views/customer/Properties/Index.vue'),
+      },
+      {
+        path: 'properties/:id',
+        name: 'customer.properties.show',
+        component: () => import('../views/customer/Properties/Show.vue'),
+      },
+
+      // Units
+      {
+        path: 'units/:id',
+        name: 'customer.units.show',
+        component: () => import('../views/customer/Units/Show.vue'),
+      },
+
+      // Purchase Requests
+      {
+        path: 'purchase-requests',
+        name: 'customer.purchase-requests.index',
+        component: () => import('../views/customer/PurchaseRequests/Index.vue'),
+      },
+      {
+        path: 'purchase-requests/:id',
+        name: 'customer.purchase-requests.show',
+        component: () => import('../views/customer/PurchaseRequests/Show.vue'),
+      },
+
+      // Contracts
+      {
+        path: 'contracts',
+        name: 'customer.contracts.index',
+        component: () => import('../views/customer/Contracts/Index.vue'),
+      },
+      {
+        path: 'contracts/:id',
+        name: 'customer.contracts.show',
+        component: () => import('../views/customer/Contracts/Show.vue'),
+      },
+
+      // Payments
+      {
+        path: 'payments',
+        name: 'customer.payments.index',
+        component: () => import('../views/customer/Payments/Index.vue'),
+      },
+      {
+        path: 'payments/:id',
+        name: 'customer.payments.show',
+        component: () => import('../views/customer/Payments/Show.vue'),
+      },
+
+      // Profile
+      {
+        path: 'profile',
+        name: 'customer.profile',
+        component: () => import('../views/customer/Profile.vue'),
+      },
+    ],
   },
-  {
-    path: '/units',
-    name: 'units',
-    component: () => import('../views/units/UnitsView.vue'),
-  },
-  {
-    path: '/tenants',
-    name: 'tenants',
-    component: () => import('../views/tenants/TenantsView.vue'),
-  },
-  {
-    path: '/contracts',
-    name: 'contracts',
-    component: () => import('../views/contracts/ContractsView.vue'),
-  },
-  {
-    path: '/payments',
-    name: 'payments',
-    component: () => import('../views/payments/PaymentsView.vue'),
-  },
-  {
-  path: '/tenant-dashboard',
-  name: 'tenant-dashboard',
-  component: () => import('../views/tenant/TenantDashboardView.vue'),
-},
-{
-  path: '/users',
-  name: 'users',
-  component: () => import('../views/users/UsersView.vue'),
-},
-{
-  path: '/profile',
-  name: 'profile',
-  component: () => import('../views/profile/ProfileView.vue'),
-},
+
+  // Catch-all
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
 })
+
+// TODO: Implement route guards
+// - Unauthenticated users accessing protected routes → redirect to /login
+// - Authenticated owners accessing customer routes → redirect to /owner/dashboard
+// - Authenticated customers accessing owner routes → redirect to /
 
 export default router
