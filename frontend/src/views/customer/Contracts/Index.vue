@@ -3,10 +3,11 @@ const placeholderContracts = [
   { id: 'CTR-2026-001', property: 'Downtown Penthouse', unit: 'Unit B2', date: 'Oct 15, 2026', status: 'Active' },
   { id: 'CTR-2025-089', property: 'Nile View Apartment', unit: 'Floor 12, Apt 4', date: 'Dec 05, 2025', status: 'Closed' },
 ]
+import CustomerDashboardLayout from '../../../components/customer/CustomerDashboardLayout.vue'
 </script>
 
 <template>
-  <div class="sk-page">
+  <CustomerDashboardLayout>
     <div class="sk-header">
       <h1>My Contracts</h1>
       <p>View and manage your signed property contracts.</p>
@@ -40,5 +41,5 @@ const placeholderContracts = [
         </tbody>
       </table>
     </div>
-  </div>
+  </CustomerDashboardLayout>
 </template>

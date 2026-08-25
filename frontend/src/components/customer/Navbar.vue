@@ -30,16 +30,15 @@ const closeMobile = () => {
       <nav class="nav-links">
         <RouterLink to="/" class="nav-link" :class="{ active: isActive('customer.home') }">Home</RouterLink>
         <RouterLink to="/properties" class="nav-link" :class="{ active: isActive('customer.properties.index') }">Properties</RouterLink>
-        <RouterLink to="/purchase-requests" class="nav-link">Requests</RouterLink>
-        <RouterLink to="/contracts" class="nav-link">Contracts</RouterLink>
-        <RouterLink to="/payments" class="nav-link">Payments</RouterLink>
-        <RouterLink to="/profile" class="nav-link">Profile</RouterLink>
+        <a href="/#why-us" class="nav-link">About</a>
+        <a href="/#footer" class="nav-link">Contact</a>
+        <RouterLink to="/profile" class="nav-link" :class="{ active: isActive('customer.profile') }">Account</RouterLink>
       </nav>
 
       <!-- Desktop Auth + CTA -->
       <div class="nav-actions">
         <RouterLink to="/login" class="btn-ghost">Login</RouterLink>
-        <RouterLink to="/login" class="btn-ghost">Logout (Demo)</RouterLink>
+        <RouterLink to="/register" class="btn-ghost">Register</RouterLink>
       </div>
 
       <!-- Hamburger -->
@@ -55,13 +54,12 @@ const closeMobile = () => {
       <div v-if="mobileOpen" class="mobile-menu">
         <RouterLink to="/" class="mobile-link" @click="closeMobile">Home</RouterLink>
         <RouterLink to="/properties" class="mobile-link" @click="closeMobile">Properties</RouterLink>
-        <RouterLink to="/purchase-requests" class="mobile-link" @click="closeMobile">Requests</RouterLink>
-        <RouterLink to="/contracts" class="mobile-link" @click="closeMobile">Contracts</RouterLink>
-        <RouterLink to="/payments" class="mobile-link" @click="closeMobile">Payments</RouterLink>
-        <RouterLink to="/profile" class="mobile-link" @click="closeMobile">Profile</RouterLink>
+        <a href="/#why-us" class="mobile-link" @click="closeMobile">About</a>
+        <a href="/#footer" class="mobile-link" @click="closeMobile">Contact</a>
+        <RouterLink to="/profile" class="mobile-link" @click="closeMobile">Account</RouterLink>
         <div class="mobile-divider"></div>
         <RouterLink to="/login" class="mobile-link" @click="closeMobile">Login</RouterLink>
-        <RouterLink to="/login" class="mobile-link" @click="closeMobile">Logout</RouterLink>
+        <RouterLink to="/register" class="mobile-link" @click="closeMobile">Register</RouterLink>
       </div>
     </Transition>
   </header>

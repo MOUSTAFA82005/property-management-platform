@@ -1,5 +1,14 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+async function handleLogout() {
+  await authStore.logout()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -23,7 +32,7 @@ import { RouterLink, RouterView } from 'vue-router'
       <RouterLink to="/owner/payments" class="owner-nav-link">Payments</RouterLink>
 
       <div class="owner-sidebar-bottom">
-        <RouterLink to="/" class="owner-nav-link" style="color: #ef4444; padding: 0;">Logout (Demo)</RouterLink>
+        <a class="owner-nav-link" style="color: #ef4444; padding: 0; cursor: pointer;" @click="handleLogout">Logout</a>
       </div>
     </aside>
 

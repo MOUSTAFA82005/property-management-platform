@@ -10,10 +10,11 @@ const getBadgeClass = (status) => {
   if (status === 'Approved') return 'sk-badge-approved'
   return 'sk-badge-rejected'
 }
+import CustomerDashboardLayout from '../../../components/customer/CustomerDashboardLayout.vue'
 </script>
 
 <template>
-  <div class="sk-page">
+  <CustomerDashboardLayout>
     <div class="sk-header">
       <h1>My Purchase Requests</h1>
       <p>Track the status of your property purchase inquiries.</p>
@@ -43,5 +44,5 @@ const getBadgeClass = (status) => {
         </tbody>
       </table>
     </div>
-  </div>
+  </CustomerDashboardLayout>
 </template>

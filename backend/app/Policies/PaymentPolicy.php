@@ -2,20 +2,20 @@
 
 namespace App\Policies;
 
-use App\Models\Contract;
+use App\Models\Payment;
 use App\Models\User;
 
-class ContractPolicy
+class PaymentPolicy
 {
     public function viewAny(User $user): bool
     {
         return in_array($user->role, ['owner', 'customer'], true);
     }
 
-    public function view(User $user, Contract $contract): bool
+    public function view(User $user, Payment $payment): bool
     {
         if ($user->role === 'customer') {
-            return $contract->user_id === $user->id;
+            return $payment->contract?->user_id === $user->id;
         }
 
         return $user->role === 'owner';
@@ -26,12 +26,12 @@ class ContractPolicy
         return $user->role === 'owner';
     }
 
-    public function update(User $user, Contract $contract): bool
+    public function update(User $user, Payment $payment): bool
     {
         return $user->role === 'owner';
     }
 
-    public function delete(User $user, Contract $contract): bool
+    public function delete(User $user, Payment $payment): bool
     {
         return $user->role === 'owner';
     }
