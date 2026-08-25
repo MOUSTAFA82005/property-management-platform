@@ -1,132 +1,142 @@
-# 🏢 Property Management Platform
+# 🏢 PropSpace – Property Management Platform
 
-![Project Status](https://img.shields.io/badge/Status-In%20Development-blue)
-![Laravel](https://img.shields.io/badge/Backend-Laravel_11-EF3B2D?style=flat&logo=laravel&logoColor=white)
-![Vue.js](https://img.shields.io/badge/Frontend-Vue.js_3-4FC08D?style=flat&logo=vuedotjs&logoColor=white)
-![MySQL](https://img.shields.io/badge/Database-MySQL-4479A1?style=flat&logo=mysql&logoColor=white)
-
-A comprehensive, scalable, and intuitive web-based **Property Management System (PMS)**. Designed to streamline real estate operations, it provides powerful tools for property owners, managers, and tenants to handle everything from lease contracts to payment tracking.
+> **AI / ChatGPT Context Guide & Project Overview**
+> *This document provides a complete technical, architectural, and business overview of the PropSpace Property Management Platform to give AI assistants (like ChatGPT) and development team members full context of the project.*
 
 ---
 
-## ✨ Key Features & Modules
+## 🎯 Project Overview & Business Model
 
-- **🔐 Authentication & Role Management:** Secure login and registration for admins, property managers, and tenants.
-- **🏢 Property & Building Management:** Track and organize portfolios consisting of properties, buildings, and specific residential or commercial units.
-- **👤 Tenant Management:** Maintain tenant profiles, contact information, and rental history.
-- **📄 Contract & Lease Administration:** Generate, manage, and renew rental agreements.
-- **💳 Financial & Payment Tracking:** Process payments, track invoices, and monitor financial health.
-- **📊 Interactive Dashboards:** Specialized views and notifications for administrators and tenants.
+PropSpace is a web-based Property Management Platform designed to connect property owners with customers across Egypt.
+
+### 👥 User Roles & Permissions
+There are **STRICTLY TWO ROLES** in this system. **THERE IS NO ADMIN ROLE.**
+
+1. **OWNER (`/owner/...`)**
+   - Has full administrative and portfolio management permissions.
+   - Manages properties, units, customers, purchase requests, contracts, and payments via the **Owner Dashboard**.
+
+2. **CUSTOMER (`/` and `/profile`, `/properties`, etc.)**
+   - Public user who browses properties and units on the website.
+   - Submits purchase requests for specific property units.
+   - Accesses personal account dashboard (`/profile`) to manage personal information, track purchase request statuses, view active contracts, and monitor payment schedules.
 
 ---
 
 ## 🛠️ Technology Stack
 
-The platform is architected as a decoupled system featuring a robust backend API and a modern, reactive frontend Single Page Application (SPA).
-
-### Backend (API)
-- **Framework:** Laravel 11.x (PHP 8.3+)
-- **Database:** MySQL
-- **Authentication:** Laravel Sanctum (Token-based API Auth)
-- **Architecture:** RESTful API principles
-
-### Frontend (SPA)
-- **Framework:** Vue.js 3 (Composition API)
-- **Build Tool:** Vite
-- **State Management:** Pinia
-- **Routing:** Vue Router 4
-- **UI & Styling:** Bootstrap 5 & Vanilla CSS
-- **HTTP Client:** Axios
+- **Frontend:** Vue 3 (Composition API with `<script setup>`), Vite, Pinia, Vue Router 4, Bootstrap 5, Vanilla CSS.
+- **Backend:** Laravel 11 (PHP 8.3+), RESTful API, Laravel Sanctum token authentication.
+- **Database:** MySQL.
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Architecture & Directory Structure
 
 ```text
 property-management-platform/
+├── backend/                  # Laravel 11 API Backend Application
+│   ├── app/                  # Models, Controllers, Middleware
+│   ├── database/             # Migrations, Seeders, Factories
+│   └── routes/api.php        # API Endpoints
 │
-├── backend/                  # Laravel API application
-│   ├── app/Models/           # Eloquent Data Models
-│   ├── database/migrations/  # Database schema (Users, Tenants, Properties, etc.)
-│   ├── routes/               # API endpoint definitions
-│   └── ...
-│
-├── frontend/                 # Vue.js Single Page Application
+├── frontend/                 # Vue.js 3 Single Page Application (SPA)
 │   ├── src/
-│   │   ├── views/            # Route components (Dashboard, Properties, Tenants, Auth)
-│   │   ├── router/           # Vue Router configuration
-│   │   ├── services/         # API integration (Axios)
-│   │   └── App.vue
+│   │   ├── components/
+│   │   │   ├── customer/     # Navbar, HeroSection, PropertyCard, CustomerDashboardLayout, SiteFooter, etc.
+│   │   │   └── owner/        # Owner UI Components
+│   │   ├── layouts/
+│   │   │   ├── CustomerLayout.vue  # Main wrapper with Navbar & Footer for public/customer pages
+│   │   │   └── OwnerLayout.vue     # Owner portal wrapper with dark side navigation
+│   │   ├── router/
+│   │   │   └── index.js      # Vue Router route definitions
+│   │   ├── views/
+│   │   │   ├── auth/         # LoginView.vue, RegisterView.vue
+│   │   │   ├── customer/     # Home.vue (Polished), Profile.vue, Properties/, Units/, PurchaseRequests/, Contracts/, Payments/
+│   │   │   └── owner/        # Dashboard.vue, Properties/, Units/, Customers/, PurchaseRequests/, Contracts/, Payments/
+│   │   ├── style.css         # Global styles & typography (Inter font, variables)
+│   │   └── style-skeleton.css# Simple wireframe/skeleton styling for developer placeholder pages
+│   ├── index.html
 │   └── package.json
-│
-├── docs/                     # Project Documentation
-│   ├── API/                  # API Specifications (Postman/Swagger)
-│   ├── ERD/                  # Entity Relationship Diagrams
-│   ├── UI-UX/                # Wireframes and Design Assets
-│   └── UML/                  # System Architecture Diagrams
 │
 └── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🌐 Routes & Frontend Navigation Map
 
-Follow these instructions to set up the project locally for development and testing.
+### 1. Customer Area (Public & Account)
+Layout: `CustomerLayout.vue`
 
-### Prerequisites
-- PHP 8.3+
-- Composer
-- Node.js (v18+) and npm
-- MySQL Server
+- `/` – **Home Page** *(POLISHED PRODUCTION UI - DO NOT REDESIGN)*
+  - Includes Navbar, Hero Section, Property Search, Featured Properties, Why Choose Us, How It Works, CTA Section, and Footer.
+- `/properties` – Properties Catalog (Search/filter placeholders & property cards skeleton)
+- `/properties/:id` – Property Details (Overview, price, available units table)
+- `/units/:id` – Unit Details (Specifications, price, request purchase CTA)
+- `/profile` – **Customer Account Dashboard** *(Uses `CustomerDashboardLayout.vue`)*
+  - Left Sidebar Menu: `My Profile`, `Purchase Requests`, `Contracts`, `Payments`, `Logout`.
+  - Main Content: Personal info overview & quick summary stats.
+- `/purchase-requests` – Customer Purchase Requests Table (Wrapped in Account Dashboard Layout)
+- `/contracts` – Customer Signed Contracts Table (Wrapped in Account Dashboard Layout)
+- `/payments` – Customer Payment History & Installments Table (Wrapped in Account Dashboard Layout)
 
-### 1. Backend Setup (Laravel)
+### 2. Owner Area (Management Portal)
+Layout: `OwnerLayout.vue`
+
+- `/owner/dashboard` – Owner Dashboard Overview (Stat cards & summary metrics)
+- `/owner/properties` – Properties Table (`+ Add Property`, Edit/Delete action buttons)
+- `/owner/properties/create` – Create Property Form
+- `/owner/properties/:id/edit` – Edit Property Form
+- `/owner/units` – Units Inventory Table
+- `/owner/customers` – Customer Profiles & Inquiries Table
+- `/owner/purchase-requests` – Purchase Requests Table with placeholder Approve/Reject actions
+- `/owner/contracts` – Contracts Management Table
+- `/owner/payments` – Payments & Installments Tracking Table
+
+### 3. Authentication
+- `/login` – Simple login form with demo routing buttons for Owner & Customer.
+- `/register` – Simple customer registration form.
+
+---
+
+## 🎨 UI Guidelines & Team Rules
+
+1. **Home Page (`/`) is Fully Polished:**
+   - Designed with rich aesthetics (Purple `#864CFF`, Dark Navy `#1a1a2e`, Cyan `#47BFFF`).
+   - Uses native inline SVGs and Inter font.
+   - **CRITICAL:** Do NOT modify, redesign, or refactor the Home page unless explicitly requested.
+
+2. **All Other Pages are Functional Skeletons / Wireframes:**
+   - Intentionally designed as simple, clean UI placeholders (`style-skeleton.css`).
+   - Built so team members can easily plug in backend API integration, Pinia stores, and final feature components without altering layout routes.
+
+3. **Customer Navbar Rule:**
+   - Public navbar contains: `Home`, `Properties`, `About`, `Contact`, `Account` (`/profile`), `Login`, `Register`.
+   - Private customer features (`Requests`, `Contracts`, `Payments`) live exclusively INSIDE the `Account Dashboard` (`/profile`) sidebar.
+
+4. **Decoupled Development Rule:**
+   - Frontend mock data is local only.
+   - Do NOT modify Laravel backend code, routes, controllers, or database migrations when building frontend skeletons.
+
+---
+
+## 🚀 How to Run the Project
+
+### Frontend Setup
 ```bash
-# Navigate to backend directory
-cd backend
-
-# Install PHP dependencies
-composer install
-
-# Copy environment variables and set up application key
-cp .env.example .env
-php artisan key:generate
-
-# Configure your database credentials in the .env file
-# DB_CONNECTION=mysql
-# DB_DATABASE=safi_pms
-# DB_USERNAME=root
-# DB_PASSWORD=
-
-# Run database migrations
-php artisan migrate
-```
-
-### 2. Frontend Setup (Vue.js)
-```bash
-# Navigate to frontend directory
 cd frontend
-
-# Install Node dependencies
 npm install
-
-# Start the Vite development server
 npm run dev
 ```
-*The frontend will typically be accessible at `http://localhost:5173`.*
+*App opens at `http://localhost:5173`.*
 
----
-
-## 👥 Team & Responsibilities
-
-This project is collaboratively built by our dedicated development team, broken down into key focus areas:
-
-- **Member 1** — Authentication, Authorization & User Management
-- **Member 2** — Properties, Buildings & Units Architecture
-- **Member 3** — Tenants, Leases & Contracts Management
-- **Member 4** — Payments, Invoices & Financial Reporting
-- **Member 5** — Interactive Dashboards & Real-time Notifications
-
----
-
-*For more detailed technical documentation, please refer to the `docs/` directory.*
+### Backend Setup (Laravel API)
+```bash
+cd backend
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan serve
+```

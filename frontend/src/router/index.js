@@ -214,9 +214,20 @@ const router = createRouter({
   routes,
 })
 
-// TODO: Implement route guards
-// - Unauthenticated users accessing protected routes → redirect to /login
-// - Authenticated owners accessing customer routes → redirect to /owner/dashboard
-// - Authenticated customers accessing owner routes → redirect to /
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+
+  const isPublic = to.name === 'login' || to.name === 'register'
+
+  if (!token && !isPublic) {
+    return next({ name: 'login' })
+  }
+
+  if (token && isPublic) {
+    return next({ path: '/owner/dashboard' })
+  }
+
+  next()
+})
 
 export default router

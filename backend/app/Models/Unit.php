@@ -34,9 +34,4 @@ class Unit extends Model
     {
         return $this->hasMany(Contract::class);
     }
-
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class);
-    }
 }

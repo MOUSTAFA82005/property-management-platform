@@ -14,7 +14,8 @@ class StoreContractRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // TODO: Define validation rules for creating a contract
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            // TODO: Define remaining validation rules for creating a contract
         ];
     }
 }
