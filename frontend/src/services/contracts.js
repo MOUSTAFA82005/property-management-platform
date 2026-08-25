@@ -1,7 +1,29 @@
 import api from './api'
 
-// TODO: Implement contract API calls
-// Owner:    /api/owner/contracts
-// Customer: /api/contracts
+export const getOwnerContracts = () => {
+  return api.get('/owner/contracts')
+}
 
-export default {}
+export const createContract = (data) => {
+  return api.post('/owner/contracts', data)
+}
+
+export const getOwnerContract = (id) => {
+  return api.get(`/owner/contracts/${id}`)
+}
+
+export const updateContract = (id, data) => {
+  return api.put(`/owner/contracts/${id}`, data)
+}
+
+export const deleteContract = (id) => {
+  return api.delete(`/owner/contracts/${id}`)
+}
+
+export const getCustomerContracts = () => {
+  return api.get('/contracts')
+}
+
+export const getCustomerContract = (id) => {
+  return api.get(`/contracts/${id}`)
+}

@@ -14,7 +14,10 @@ class ContractController extends Controller
     /** GET /api/owner/contracts */
     public function index(Request $request): JsonResponse
     {
-        $contracts = Contract::with(['customer', 'unit'])
+        $contracts = Contract::with([
+            'customer',
+            'unit.building.property',
+        ])
             ->whereHas('unit.building.property', function ($query) use ($request) {
                 $query->where('owner_id', $request->user()->id);
             })
@@ -48,7 +51,8 @@ class ContractController extends Controller
             ], 422);
         }
 
-        $unit = Unit::with('building.property')->findOrFail($validated['unit_id']);
+        $unit = Unit::with('building.property')
+            ->findOrFail($validated['unit_id']);
 
         if ($unit->building->property->owner_id !== $request->user()->id) {
             return response()->json([
@@ -70,17 +74,25 @@ class ContractController extends Controller
 
         return response()->json([
             'message' => 'Contract created successfully.',
-            'data' => $contract->load(['customer', 'unit']),
+            'data' => $contract->load([
+                'customer',
+                'unit.building.property',
+            ]),
         ], 201);
     }
 
     /** GET /api/owner/contracts/{contract} */
-    public function show(Request $request, Contract $contract): JsonResponse
-    {
+    public function show(
+        Request $request,
+        Contract $contract
+    ): JsonResponse {
         $this->authorizeOwner($request, $contract);
 
         return response()->json([
-            'data' => $contract->load(['customer', 'unit']),
+            'data' => $contract->load([
+                'customer',
+                'unit.building.property',
+            ]),
         ]);
     }
 
@@ -117,13 +129,18 @@ class ContractController extends Controller
 
         return response()->json([
             'message' => 'Contract updated successfully.',
-            'data' => $contract->load(['customer', 'unit']),
+            'data' => $contract->load([
+                'customer',
+                'unit.building.property',
+            ]),
         ]);
     }
 
     /** DELETE /api/owner/contracts/{contract} */
-    public function destroy(Request $request, Contract $contract): JsonResponse
-    {
+    public function destroy(
+        Request $request,
+        Contract $contract
+    ): JsonResponse {
         $this->authorizeOwner($request, $contract);
 
         $unit = $contract->unit;
