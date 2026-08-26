@@ -1,22 +1,30 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, RouterLink, useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
 
-const route = useRoute()
+const route     = useRoute()
+const router    = useRouter()
+const authStore = useAuthStore()
+
 const mobileOpen = ref(false)
 
-const isActive = (name) => route.name === name
+const isActive    = (name) => route.name === name
+const isLoggedIn  = computed(() => !!authStore.token)
+const isOwner     = computed(() => authStore.isOwner())
 
-const toggleMobile = () => {
-  mobileOpen.value = !mobileOpen.value
-}
-const closeMobile = () => {
-  mobileOpen.value = false
+const toggleMobile = () => { mobileOpen.value = !mobileOpen.value }
+const closeMobile  = () => { mobileOpen.value = false }
+
+async function handleLogout() {
+  closeMobile()
+  await authStore.logout()
+  router.push('/login')
 }
 </script>
 
 <template>
-  <header class="site-nav" :class="{ 'nav-scrolled': true }">
+  <header class="site-nav">
     <div class="nav-container">
       <!-- Logo -->
       <RouterLink to="/" class="nav-logo" @click="closeMobile">
@@ -30,16 +38,29 @@ const closeMobile = () => {
       <nav class="nav-links">
         <RouterLink to="/" class="nav-link" :class="{ active: isActive('customer.home') }">Home</RouterLink>
         <RouterLink to="/properties" class="nav-link" :class="{ active: isActive('customer.properties.index') }">Properties</RouterLink>
-        <RouterLink to="/purchase-requests" class="nav-link">Requests</RouterLink>
-        <RouterLink to="/contracts" class="nav-link">Contracts</RouterLink>
-        <RouterLink to="/payments" class="nav-link">Payments</RouterLink>
-        <RouterLink to="/profile" class="nav-link">Profile</RouterLink>
+        <a href="/#why-us" class="nav-link">About</a>
+        <a href="/#footer" class="nav-link">Contact</a>
+
+        <!-- Owner Portal link (owners only) -->
+        <RouterLink v-if="isLoggedIn && isOwner" to="/owner/dashboard" class="nav-link nav-link-owner">
+          Owner Portal
+        </RouterLink>
+
+        <!-- Account link (authenticated customers) -->
+        <RouterLink v-if="isLoggedIn && !isOwner" to="/profile" class="nav-link" :class="{ active: isActive('customer.profile') }">
+          Account
+        </RouterLink>
       </nav>
 
-      <!-- Desktop Auth + CTA -->
+      <!-- Desktop Auth Actions -->
       <div class="nav-actions">
-        <RouterLink to="/login" class="btn-ghost">Login</RouterLink>
-        <RouterLink to="/login" class="btn-ghost">Logout (Demo)</RouterLink>
+        <template v-if="!isLoggedIn">
+          <RouterLink to="/login" class="btn-ghost">Login</RouterLink>
+          <RouterLink to="/register" class="btn-ghost btn-ghost-primary">Register</RouterLink>
+        </template>
+        <template v-else>
+          <button class="btn-ghost btn-logout" @click="handleLogout">Logout</button>
+        </template>
       </div>
 
       <!-- Hamburger -->
@@ -55,13 +76,26 @@ const closeMobile = () => {
       <div v-if="mobileOpen" class="mobile-menu">
         <RouterLink to="/" class="mobile-link" @click="closeMobile">Home</RouterLink>
         <RouterLink to="/properties" class="mobile-link" @click="closeMobile">Properties</RouterLink>
-        <RouterLink to="/purchase-requests" class="mobile-link" @click="closeMobile">Requests</RouterLink>
-        <RouterLink to="/contracts" class="mobile-link" @click="closeMobile">Contracts</RouterLink>
-        <RouterLink to="/payments" class="mobile-link" @click="closeMobile">Payments</RouterLink>
-        <RouterLink to="/profile" class="mobile-link" @click="closeMobile">Profile</RouterLink>
+        <a href="/#why-us" class="mobile-link" @click="closeMobile">About</a>
+        <a href="/#footer" class="mobile-link" @click="closeMobile">Contact</a>
+
+        <template v-if="isLoggedIn && isOwner">
+          <RouterLink to="/owner/dashboard" class="mobile-link mobile-link-owner" @click="closeMobile">Owner Portal</RouterLink>
+        </template>
+
+        <template v-if="isLoggedIn && !isOwner">
+          <RouterLink to="/profile" class="mobile-link" @click="closeMobile">Account</RouterLink>
+        </template>
+
         <div class="mobile-divider"></div>
-        <RouterLink to="/login" class="mobile-link" @click="closeMobile">Login</RouterLink>
-        <RouterLink to="/login" class="mobile-link" @click="closeMobile">Logout</RouterLink>
+
+        <template v-if="!isLoggedIn">
+          <RouterLink to="/login" class="mobile-link" @click="closeMobile">Login</RouterLink>
+          <RouterLink to="/register" class="mobile-link" @click="closeMobile">Register</RouterLink>
+        </template>
+        <template v-else>
+          <a class="mobile-link mobile-link-logout" @click="handleLogout" style="cursor: pointer;">Logout</a>
+        </template>
       </div>
     </Transition>
   </header>
@@ -130,6 +164,16 @@ const closeMobile = () => {
   background: rgba(134, 76, 255, 0.07);
 }
 
+.nav-link-owner {
+  color: #864CFF;
+  font-weight: 600;
+  background: rgba(134, 76, 255, 0.06);
+}
+
+.nav-link-owner:hover {
+  background: rgba(134, 76, 255, 0.14);
+}
+
 .nav-actions {
   display: flex;
   align-items: center;
@@ -144,7 +188,11 @@ const closeMobile = () => {
   color: #475569;
   text-decoration: none;
   border-radius: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   transition: color 0.2s, background 0.2s;
+  font-family: inherit;
 }
 
 .btn-ghost:hover {
@@ -152,24 +200,30 @@ const closeMobile = () => {
   background: rgba(134, 76, 255, 0.07);
 }
 
-.btn-primary-nav {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.45rem 1.1rem;
+.btn-ghost-primary {
   background: linear-gradient(135deg, #864CFF, #6B2FFF);
   color: #fff !important;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
+  padding: 0.45rem 1.1rem;
   border-radius: 8px;
-  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  font-weight: 600;
   box-shadow: 0 2px 12px rgba(134, 76, 255, 0.3);
 }
 
-.btn-primary-nav:hover {
+.btn-ghost-primary:hover {
+  opacity: 0.92;
+  background: linear-gradient(135deg, #864CFF, #6B2FFF) !important;
+  color: #fff !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(134, 76, 255, 0.4);
-  opacity: 0.95;
+  box-shadow: 0 4px 18px rgba(134, 76, 255, 0.4);
+}
+
+.btn-logout {
+  color: #ef4444;
+}
+
+.btn-logout:hover {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.07);
 }
 
 /* Hamburger */
@@ -227,24 +281,24 @@ const closeMobile = () => {
   color: #864CFF;
 }
 
+.mobile-link-owner {
+  color: #864CFF;
+  font-weight: 600;
+}
+
+.mobile-link-logout {
+  color: #ef4444;
+}
+
+.mobile-link-logout:hover {
+  background: rgba(239, 68, 68, 0.07) !important;
+  color: #dc2626 !important;
+}
+
 .mobile-divider {
   height: 1px;
   background: #e2e8f0;
   margin: 0.5rem 0;
-}
-
-.mobile-cta {
-  display: block;
-  margin-top: 0.5rem;
-  padding: 0.75rem;
-  background: linear-gradient(135deg, #864CFF, #6B2FFF);
-  color: #fff !important;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0 2px 12px rgba(134, 76, 255, 0.3);
 }
 
 /* Slide transition */

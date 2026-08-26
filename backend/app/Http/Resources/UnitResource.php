@@ -33,6 +33,7 @@ class UnitResource extends JsonResource
             'bathrooms' => (int) $this->bathrooms,
             'monthly_rent' => (float) $this->monthly_rent,
             'status' => $this->status,
+
             'building' => $this->whenLoaded('building', function () {
                 return [
                     'id' => $this->building->id,
@@ -41,6 +42,7 @@ class UnitResource extends JsonResource
                     'description' => $this->building->description,
                 ];
             }),
+
             'property' => $this->whenLoaded('property', function () {
                 return [
                     'id' => $this->property->id,
@@ -49,6 +51,7 @@ class UnitResource extends JsonResource
                     'address' => $this->property->address,
                 ];
             }),
+
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

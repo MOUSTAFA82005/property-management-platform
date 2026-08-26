@@ -1,29 +1,29 @@
 import api from './api'
 
-export const getOwnerContracts = () => {
-  return api.get('/owner/contracts')
+export function getOwnerContracts(params = {}) {
+  return api.get('/owner/contracts', { params })
 }
 
-export const createContract = (data) => {
-  return api.post('/owner/contracts', data)
-}
-
-export const getOwnerContract = (id) => {
+export function getOwnerContract(id) {
   return api.get(`/owner/contracts/${id}`)
 }
 
-export const updateContract = (id, data) => {
+export function createOwnerContract(data) {
+  return api.post('/owner/contracts', data)
+}
+
+export function updateOwnerContract(id, data) {
   return api.put(`/owner/contracts/${id}`, data)
 }
 
-export const deleteContract = (id) => {
+export function deleteOwnerContract(id) {
   return api.delete(`/owner/contracts/${id}`)
 }
 
-export const getCustomerContracts = () => {
+export function getCustomerContracts() {
   return api.get('/contracts')
 }
 
-export const getCustomerContract = (id) => {
+export function getCustomerContract(id) {
   return api.get(`/contracts/${id}`)
 }

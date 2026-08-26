@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('contracts', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('tenant_id')
-                ->constrained('tenants')
+            $table->foreignId('user_id')
+                ->constrained('users')
                 ->restrictOnDelete();
 
             $table->foreignId('unit_id')

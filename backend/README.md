@@ -57,7 +57,7 @@ app/
       PropertyController.php     # CRUD /properties
       BuildingController.php     # CRUD /buildings
       UnitController.php         # CRUD /units
-      TenantController.php       # CRUD /tenants
+      CustomerController.php     # List / show customers (users.role = customer)
       ContractController.php     # CRUD /contracts
       PaymentController.php      # CRUD /payments
   Models/
@@ -65,7 +65,6 @@ app/
     Property.php
     Building.php
     Unit.php
-    Tenant.php
     Contract.php
     Payment.php
 routes/
@@ -84,8 +83,9 @@ Uses Laravel Sanctum (token-based).
 
 ## Data Ownership
 
-Every resource is scoped to the authenticated property manager:
-`User → Properties → Buildings → Units → Contracts → Payments`
+`User (Customer) → Contracts → Payments`
+
+Customer payment access is scoped through the authenticated user's own contracts. Owners manage properties and related resources via the owner API.
 
 Controllers must verify ownership before any read/write/delete operation.
 

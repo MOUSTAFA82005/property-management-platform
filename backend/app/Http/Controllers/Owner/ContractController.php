@@ -3,44 +3,50 @@
 namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ContractResource;
 use App\Models\Contract;
 use App\Models\User;
 use App\Models\Unit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class ContractController extends Controller
 {
     /** GET /api/owner/contracts */
     public function index(Request $request): JsonResponse
     {
+        Gate::authorize('viewAny', Contract::class);
+
         $contracts = Contract::with([
+            'user',
             'customer',
             'unit.building.property',
+            'payments',
         ])
             ->whereHas('unit.building.property', function ($query) use ($request) {
                 $query->where('owner_id', $request->user()->id);
             })
             ->latest()
-            ->get();
+            ->paginate($request->input('per_page', 15));
 
-        return response()->json([
-            'data' => $contracts,
-        ]);
+        return ContractResource::collection($contracts)->response();
     }
 
     /** POST /api/owner/contracts */
     public function store(Request $request): JsonResponse
     {
+        Gate::authorize('create', Contract::class);
+
         $validated = $request->validate([
-            'customer_id' => ['required', 'integer', 'exists:users,id'],
-            'unit_id' => ['required', 'integer', 'exists:units,id'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after:start_date'],
-            'monthly_rent' => ['required', 'numeric', 'min:0'],
+            'customer_id'      => ['required', 'integer', 'exists:users,id'],
+            'unit_id'          => ['required', 'integer', 'exists:units,id'],
+            'start_date'       => ['required', 'date'],
+            'end_date'         => ['required', 'date', 'after:start_date'],
+            'monthly_rent'     => ['required', 'numeric', 'min:0'],
             'security_deposit' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['nullable', 'in:active,expired,terminated'],
-            'notes' => ['nullable', 'string'],
+            'status'           => ['nullable', 'in:active,expired,terminated'],
+            'notes'            => ['nullable', 'string'],
         ]);
 
         $customer = User::findOrFail($validated['customer_id']);
@@ -72,13 +78,16 @@ class ContractController extends Controller
             'status' => 'occupied',
         ]);
 
-        return response()->json([
-            'message' => 'Contract created successfully.',
-            'data' => $contract->load([
-                'customer',
-                'unit.building.property',
-            ]),
-        ], 201);
+        $contract->load([
+            'user',
+            'customer',
+            'unit.building.property',
+            'payments',
+        ]);
+
+        return (new ContractResource($contract))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /** GET /api/owner/contracts/{contract} */
@@ -86,14 +95,18 @@ class ContractController extends Controller
         Request $request,
         Contract $contract
     ): JsonResponse {
+        Gate::authorize('view', $contract);
+
         $this->authorizeOwner($request, $contract);
 
-        return response()->json([
-            'data' => $contract->load([
-                'customer',
-                'unit.building.property',
-            ]),
+        $contract->load([
+            'user',
+            'customer',
+            'unit.building.property',
+            'payments',
         ]);
+
+        return (new ContractResource($contract))->response();
     }
 
     /** PUT /api/owner/contracts/{contract} */
@@ -101,18 +114,30 @@ class ContractController extends Controller
         Request $request,
         Contract $contract
     ): JsonResponse {
+        Gate::authorize('update', $contract);
+
         $this->authorizeOwner($request, $contract);
 
         $validated = $request->validate([
-            'customer_id' => ['sometimes', 'integer', 'exists:users,id'],
-            'unit_id' => ['sometimes', 'integer', 'exists:units,id'],
-            'start_date' => ['sometimes', 'date'],
-            'end_date' => ['sometimes', 'date', 'after:start_date'],
-            'monthly_rent' => ['sometimes', 'numeric', 'min:0'],
+            'customer_id'       => ['sometimes', 'integer', 'exists:users,id'],
+            'unit_id'           => ['sometimes', 'integer', 'exists:units,id'],
+            'start_date'       => ['sometimes', 'date'],
+            'end_date'         => ['sometimes', 'date', 'after:start_date'],
+            'monthly_rent'     => ['sometimes', 'numeric', 'min:0'],
             'security_deposit' => ['sometimes', 'numeric', 'min:0'],
-            'status' => ['sometimes', 'in:active,expired,terminated'],
-            'notes' => ['nullable', 'string'],
+            'status'            => ['sometimes', 'in:active,expired,terminated'],
+            'notes'             => ['nullable', 'string'],
         ]);
+
+        if (isset($validated['customer_id'])) {
+            $customer = User::findOrFail($validated['customer_id']);
+
+            if ($customer->role !== 'customer') {
+                return response()->json([
+                    'message' => 'The selected customer is invalid.',
+                ], 422);
+            }
+        }
 
         if (isset($validated['unit_id'])) {
             $unit = Unit::with('building.property')
@@ -127,13 +152,14 @@ class ContractController extends Controller
 
         $contract->update($validated);
 
-        return response()->json([
-            'message' => 'Contract updated successfully.',
-            'data' => $contract->load([
-                'customer',
-                'unit.building.property',
-            ]),
+        $contract->load([
+            'user',
+            'customer',
+            'unit.building.property',
+            'payments',
         ]);
+
+        return (new ContractResource($contract))->response();
     }
 
     /** DELETE /api/owner/contracts/{contract} */
@@ -141,6 +167,8 @@ class ContractController extends Controller
         Request $request,
         Contract $contract
     ): JsonResponse {
+        Gate::authorize('delete', $contract);
+
         $this->authorizeOwner($request, $contract);
 
         $unit = $contract->unit;
@@ -153,9 +181,7 @@ class ContractController extends Controller
             ]);
         }
 
-        return response()->json([
-            'message' => 'Contract deleted successfully.',
-        ]);
+        return response()->json(null, 204);
     }
 
     private function authorizeOwner(
@@ -165,6 +191,9 @@ class ContractController extends Controller
         $contract->loadMissing('unit.building.property');
 
         abort_unless(
+            $contract->unit &&
+            $contract->unit->building &&
+            $contract->unit->building->property &&
             $contract->unit->building->property->owner_id === $request->user()->id,
             403,
             'You are not authorized to access this contract.'

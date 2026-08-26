@@ -31,7 +31,7 @@ import { RouterLink } from 'vue-router'
 <style scoped>
 .cta-section {
   position: relative;
-  padding: 6rem 1.5rem;
+  padding: 5rem 1.5rem;
   background: linear-gradient(135deg, #864CFF 0%, #6B2FFF 50%, #47BFFF 100%);
   overflow: hidden;
   text-align: center;
@@ -148,7 +148,7 @@ import { RouterLink } from 'vue-router'
 
 @media (max-width: 480px) {
   .cta-section {
-    padding: 4rem 1rem;
+    padding: 3.5rem 1.25rem;
   }
 
   .cta-actions {
