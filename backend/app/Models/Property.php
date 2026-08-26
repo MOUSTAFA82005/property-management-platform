@@ -13,18 +13,23 @@ class Property extends Model
     use HasFactory;
 
     protected $fillable = [
+        'owner_id',
         'name',
         'address',
         'city',
         'description',
         'property_type',
         'status',
-        'manager_id',
+        'is_published',
     ];
 
-    public function manager(): BelongsTo
+    protected $casts = [
+        'is_published' => 'boolean',
+    ];
+
+    public function owner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'manager_id');
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
     public function buildings(): HasMany
@@ -37,10 +42,10 @@ class Property extends Model
         return $this->hasManyThrough(
             Unit::class,
             Building::class,
-            'property_id', 
-            'building_id', 
-            'id',         
-            'id'          
+            'property_id',
+            'building_id',
+            'id',
+            'id'
         );
     }
 }

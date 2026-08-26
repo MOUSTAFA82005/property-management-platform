@@ -14,8 +14,8 @@ class UnitResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $property = $this->relationLoaded('property') 
-            ? $this->property 
+        $property = $this->relationLoaded('property')
+            ? $this->property
             : ($this->relationLoaded('building') && $this->building ? $this->building->property : null);
 
         $propertyId = $property?->id ?? $this->building?->property_id;
@@ -54,4 +54,3 @@ class UnitResource extends JsonResource
         ];
     }
 }
-

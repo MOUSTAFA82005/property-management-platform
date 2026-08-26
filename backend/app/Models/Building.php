@@ -32,4 +32,3 @@ class Building extends Model
         return $this->hasMany(Unit::class);
     }
 }
-
