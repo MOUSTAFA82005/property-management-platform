@@ -11,9 +11,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PropertyController extends Controller
 {
-    /**
-     * Display a listing of properties.
-     */
+
     public function index(): AnonymousResourceCollection
     {
         $properties = Property::with(['units', 'manager'])
@@ -24,9 +22,6 @@ class PropertyController extends Controller
         return PropertyResource::collection($properties);
     }
 
-    /**
-     * Display the specified property.
-     */
     public function show(Property $property): PropertyResource
     {
         $property->load(['units.building', 'manager'])->loadCount('units');
@@ -34,9 +29,6 @@ class PropertyController extends Controller
         return new PropertyResource($property);
     }
 
-    /**
-     * Store a newly created property.
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -55,35 +47,35 @@ class PropertyController extends Controller
 
         if (empty($validated['manager_id'])) {
             $manager = auth()->user() ?? User::first();
+
             if (!$manager) {
                 $manager = User::create([
                     'name' => 'Admin Manager',
                     'email' => 'admin@example.com',
-                    'password' => bcrypt('password123'),
+                    'password' => 'password123',
                 ]);
             }
+
             $validated['manager_id'] = $manager->id;
         }
 
         $property = Property::create($validated);
 
-        // Create a default building for this property to anchor units
+
         $property->buildings()->create([
             'name' => $property->name . ' - Main',
             'floors_count' => 1,
             'description' => 'Main Building',
         ]);
 
-        $property->load(['units', 'manager'])->loadCount('units');
+       $property->load(['manager'])->loadCount('units');
 
         return (new PropertyResource($property))
             ->response()
             ->setStatusCode(201);
     }
 
-    /**
-     * Update the specified property.
-     */
+
     public function update(Request $request, Property $property): PropertyResource
     {
         $validated = $request->validate([
@@ -103,9 +95,6 @@ class PropertyController extends Controller
         return new PropertyResource($property);
     }
 
-    /**
-     * Remove the specified property.
-     */
     public function destroy(Property $property): JsonResponse
     {
         $property->delete();

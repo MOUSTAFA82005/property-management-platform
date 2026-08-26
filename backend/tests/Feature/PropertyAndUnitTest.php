@@ -68,7 +68,7 @@ class PropertyAndUnitTest extends TestCase
             'city' => 'Riyadh',
         ]);
 
-        // Asserts building was also created
+      
         $this->assertDatabaseHas('buildings', [
             'name' => 'Palm Tower - Main',
         ]);

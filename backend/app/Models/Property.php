@@ -37,10 +37,10 @@ class Property extends Model
         return $this->hasManyThrough(
             Unit::class,
             Building::class,
-            'property_id', // Foreign key on buildings table
-            'building_id', // Foreign key on units table
-            'id',          // Local key on properties table
-            'id'           // Local key on buildings table
+            'property_id', 
+            'building_id', 
+            'id',         
+            'id'          
         );
     }
 }

@@ -13,9 +13,6 @@ use Illuminate\Validation\ValidationException;
 
 class UnitController extends Controller
 {
-    /**
-     * Display a listing of units.
-     */
     public function index(): AnonymousResourceCollection
     {
         $units = Unit::with(['building.property'])
@@ -25,9 +22,7 @@ class UnitController extends Controller
         return UnitResource::collection($units);
     }
 
-    /**
-     * Display a listing of units for a specific property.
-     */
+    
     public function unitsByProperty(Property $property): AnonymousResourceCollection
     {
         $units = $property->units()
@@ -38,9 +33,7 @@ class UnitController extends Controller
         return UnitResource::collection($units);
     }
 
-    /**
-     * Display the specified unit.
-     */
+   
     public function show(Unit $unit): UnitResource
     {
         $unit->load(['building.property']);
@@ -48,9 +41,7 @@ class UnitController extends Controller
         return new UnitResource($unit);
     }
 
-    /**
-     * Store a newly created unit.
-     */
+    
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -94,7 +85,7 @@ class UnitController extends Controller
         $validated['building_id'] = $buildingId;
         unset($validated['property_id']);
 
-        // Validate uniqueness within building
+        
         $exists = Unit::where('building_id', $buildingId)
             ->where('unit_number', $validated['unit_number'])
             ->exists();
@@ -118,9 +109,7 @@ class UnitController extends Controller
             ->setStatusCode(201);
     }
 
-    /**
-     * Update the specified unit.
-     */
+    
     public function update(Request $request, Unit $unit): UnitResource
     {
         $validated = $request->validate([
@@ -171,9 +160,6 @@ class UnitController extends Controller
         return new UnitResource($unit);
     }
 
-    /**
-     * Remove the specified unit.
-     */
     public function destroy(Unit $unit): JsonResponse
     {
         $unit->delete();

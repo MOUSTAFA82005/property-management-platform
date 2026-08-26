@@ -41,10 +41,10 @@ class Unit extends Model
         return $this->hasOneThrough(
             Property::class,
             Building::class,
-            'id',          // Foreign key on buildings table (local key in hasOneThrough context)
-            'id',          // Foreign key on properties table
-            'building_id', // Local key on units table
-            'property_id'  // Local key on buildings table
+            'id',         
+            'id',         
+            'building_id', 
+            'property_id' 
         );
     }
 }
