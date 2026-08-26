@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Gate;
 
 class ContractController extends Controller
 {
-    /** GET /api/contracts  — customer's own contracts */
+    /** GET /api/contracts — customer's own contracts */
     public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Contract::class);

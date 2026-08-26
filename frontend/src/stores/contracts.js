@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth'
+
 import {
   getOwnerContracts,
   getOwnerContract,
@@ -13,11 +14,11 @@ import {
 
 export const useContractsStore = defineStore('contracts', () => {
   const contracts = ref([])
-  const contract  = ref(null)
-  const loading   = ref(false)
-  const error     = ref(null)
+  const contract = ref(null)
+  const loading = ref(false)
+  const error = ref(null)
 
-  const meta  = ref(null)
+  const meta = ref(null)
   const links = ref(null)
 
   function resetError() {
@@ -28,7 +29,11 @@ export const useContractsStore = defineStore('contracts', () => {
     const body = response.data
 
     if (Array.isArray(body)) {
-      return { data: body, meta: null, links: null }
+      return {
+        data: body,
+        meta: null,
+        links: null,
+      }
     }
 
     if (body?.data && Array.isArray(body.data)) {
@@ -39,20 +44,27 @@ export const useContractsStore = defineStore('contracts', () => {
       }
     }
 
-    return { data: body ? [body] : [], meta: null, links: null }
+    return {
+      data: body ? [body] : [],
+      meta: null,
+      links: null,
+    }
   }
 
-  // -- Owner actions ------------------------------------------
+  // Owner actions
 
   async function fetchOwnerContracts(params = {}) {
     loading.value = true
     resetError()
+
     try {
       const res = await getOwnerContracts(params)
       const extracted = extractData(res)
+
       contracts.value = extracted.data
       meta.value = extracted.meta
       links.value = extracted.links
+
       return extracted.data
     } catch (e) {
       error.value = e.response?.data?.message || e.message
@@ -65,9 +77,12 @@ export const useContractsStore = defineStore('contracts', () => {
   async function fetchOwnerContract(id) {
     loading.value = true
     resetError()
+
     try {
       const res = await getOwnerContract(id)
+
       contract.value = res.data?.data || res.data
+
       return contract.value
     } catch (e) {
       error.value = e.response?.data?.message || e.message
@@ -77,17 +92,90 @@ export const useContractsStore = defineStore('contracts', () => {
     }
   }
 
-  // -- Customer actions ----------------------------------------
+  async function addContract(data) {
+    loading.value = true
+    resetError()
+
+    try {
+      const res = await createOwnerContract(data)
+
+      const newContract = res.data?.data || res.data
+
+      contracts.value.unshift(newContract)
+
+      return res.data
+    } catch (e) {
+      error.value = e.response?.data?.message || e.message
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function editContract(id, data) {
+    loading.value = true
+    resetError()
+
+    try {
+      const res = await updateOwnerContract(id, data)
+
+      const updatedContract = res.data?.data || res.data
+
+      const index = contracts.value.findIndex(
+        (item) => item.id === id
+      )
+
+      if (index !== -1) {
+        contracts.value[index] = updatedContract
+      }
+
+      contract.value = updatedContract
+
+      return res.data
+    } catch (e) {
+      error.value = e.response?.data?.message || e.message
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function removeContract(id) {
+    loading.value = true
+    resetError()
+
+    try {
+      await deleteOwnerContract(id)
+
+      contracts.value = contracts.value.filter(
+        (item) => item.id !== id
+      )
+
+      if (contract.value?.id === id) {
+        contract.value = null
+      }
+    } catch (e) {
+      error.value = e.response?.data?.message || e.message
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Customer actions
 
   async function fetchCustomerContracts(params = {}) {
     loading.value = true
     resetError()
+
     try {
       const res = await getCustomerContracts(params)
       const extracted = extractData(res)
+
       contracts.value = extracted.data
       meta.value = extracted.meta
       links.value = extracted.links
+
       return extracted.data
     } catch (e) {
       error.value = e.response?.data?.message || e.message
@@ -100,9 +188,12 @@ export const useContractsStore = defineStore('contracts', () => {
   async function fetchCustomerContract(id) {
     loading.value = true
     resetError()
+
     try {
       const res = await getCustomerContract(id)
+
       contract.value = res.data?.data || res.data
+
       return contract.value
     } catch (e) {
       error.value = e.response?.data?.message || e.message
@@ -112,21 +203,25 @@ export const useContractsStore = defineStore('contracts', () => {
     }
   }
 
-  // -- Unified fetch ------------------------------------------
+  // Unified actions
 
   async function fetchContracts(params = {}) {
     const auth = useAuthStore()
+
     if (auth.isOwner()) {
       return fetchOwnerContracts(params)
     }
+
     return fetchCustomerContracts(params)
   }
 
   async function fetchContract(id) {
     const auth = useAuthStore()
+
     if (auth.isOwner()) {
       return fetchOwnerContract(id)
     }
+
     return fetchCustomerContract(id)
   }
 
@@ -140,6 +235,9 @@ export const useContractsStore = defineStore('contracts', () => {
 
     fetchOwnerContracts,
     fetchOwnerContract,
+    addContract,
+    editContract,
+    removeContract,
 
     fetchCustomerContracts,
     fetchCustomerContract,
