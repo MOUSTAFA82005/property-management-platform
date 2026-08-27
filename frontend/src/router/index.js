@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const routes = [
   // -------------------------------------------------------
@@ -217,42 +218,48 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-  const user  = JSON.parse(localStorage.getItem('user') || 'null')
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
 
-  const isAuthPage       = to.name === 'login' || to.name === 'register'
-  const isPublic         = to.meta?.public === true
-  const requiresAuth     = to.meta?.requiresAuth === true
-  const requiresOwner    = to.meta?.requiresOwner === true
+  // Restore the session behind a stored token before deciding anything.
+  // initializeAuth() is idempotent, so this only hits /auth/me once.
+  if (!auth.initialized) {
+    await auth.initializeAuth()
+  }
+
+  const isAuthPage = to.name === 'login' || to.name === 'register'
+  const isPublic = to.meta?.public === true
+  const requiresAuth = to.meta?.requiresAuth === true
+  const requiresOwner = to.meta?.requiresOwner === true
   const requiresCustomer = to.meta?.requiresCustomer === true
 
-  // Authenticated users should not see login/register
-  if (token && isAuthPage) {
-    return next({ path: '/' })
+  // Signed-in users have no business on the login/register screens.
+  if (isAuthPage) {
+    return auth.isAuthenticated ? auth.homeRoute() : true
   }
 
-  // Public routes and auth pages are always accessible
-  if (isPublic || isAuthPage) {
-    return next()
+  if (isPublic) {
+    return true
   }
 
-  // Any protected route without a token → login
-  if ((requiresAuth || requiresCustomer) && !token) {
-    return next({ name: 'login' })
+  // Any protected route without a session → login, remembering where they were
+  // headed so the login page can send them back.
+  if ((requiresAuth || requiresOwner || requiresCustomer) && !auth.isAuthenticated) {
+    return { name: 'login', query: { redirect: to.fullPath } }
   }
 
-  // Owner-only routes: non-owners get redirected home
-  if (requiresOwner && user?.role !== 'owner') {
-    return next({ path: '/' })
+  // Owner portal is owner-only. The API enforces this too (role:owner) — this
+  // guard just avoids rendering a page that would only 403.
+  if (requiresOwner && !auth.isOwner()) {
+    return '/'
   }
 
-  // Customer-only routes: owners are redirected to their portal, never into the customer flow
-  if (requiresCustomer && user?.role !== 'customer') {
-    return next({ path: '/owner/dashboard' })
+  // Customer account pages are customer-only; owners go to their portal.
+  if (requiresCustomer && !auth.isCustomer()) {
+    return '/owner/dashboard'
   }
 
-  next()
+  return true
 })
 
 export default router

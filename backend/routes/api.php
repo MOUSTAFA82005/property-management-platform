@@ -39,7 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---------------------------------------------------
     // Owner routes
     // ---------------------------------------------------
-    Route::prefix('owner')->group(function () {
+    // role:owner keeps customers out of the owner portal entirely. Ownership
+    // of individual records is still enforced per-controller/per-policy.
+    Route::prefix('owner')->middleware('role:owner')->group(function () {
 
         Route::get('/dashboard', OwnerDashboardController::class);
 

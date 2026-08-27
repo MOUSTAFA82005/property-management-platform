@@ -151,6 +151,17 @@ button {
   transition: .2s
 }
 
+/* The sidebar logout is a <button> because it performs an action rather than
+   navigating; reset the UA styles so it matches the sibling nav links. */
+button.owner-nav-item {
+  width: 100%;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .owner-nav-item:hover {
   color: #fff;
   background: #ffffff0b

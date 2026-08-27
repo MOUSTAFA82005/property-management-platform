@@ -309,6 +309,15 @@
   min-height: 90px;
 }
 
+/* Inline field-level validation message, used by the auth forms. */
+.sk-form-error {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: #dc2626;
+}
+
 .sk-form-actions {
   display: flex;
   gap: 0.75rem;

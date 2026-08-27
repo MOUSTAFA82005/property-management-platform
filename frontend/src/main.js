@@ -14,9 +14,11 @@ const app = createApp(App)
 
 app.use(createPinia())
 
+// Restore the session before the first route resolves, so a refresh never
+// flashes the signed-out version of a page the user is allowed to see.
 const authStore = useAuthStore()
-authStore.initAuth()
 
-app.use(router)
-
-app.mount('#app')
+authStore.initializeAuth().finally(() => {
+  app.use(router)
+  app.mount('#app')
+})

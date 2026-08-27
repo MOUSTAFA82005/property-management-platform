@@ -6,6 +6,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Self-service owner registration
+    |--------------------------------------------------------------------------
+    |
+    | PropSpace has exactly two roles: owner and customer. Public registration
+    | creates customers. An owner account carries portfolio-wide management
+    | rights, so it is not self-service by default — set
+    | ALLOW_OWNER_REGISTRATION=true to open POST /api/auth/register to owners.
+    |
+    */
+
+    'allow_owner_registration' => env('ALLOW_OWNER_REGISTRATION', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Defaults
     |--------------------------------------------------------------------------
     |
