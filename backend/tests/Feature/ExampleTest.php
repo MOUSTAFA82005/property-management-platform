@@ -6,10 +6,13 @@ use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_the_root_route_identifies_the_api(): void
     {
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
+        // The Blade login screen that used to live here was removed; the
+        // backend is API-only and the root route now just identifies it.
+        $this->getJson('/')
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonStructure(['name', 'api', 'status']);
     }
 }

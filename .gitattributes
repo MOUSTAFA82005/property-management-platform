@@ -1,0 +1,21 @@
+# Normalize line endings for every text file in the repository.
+# Without this, a Windows checkout rewrites every file with CRLF and
+# `git diff` reports thousands of changed lines that contain no code changes.
+* text=auto eol=lf
+
+*.blade.php diff=html
+*.css        diff=css
+*.html       diff=html
+*.md         diff=markdown
+*.php        diff=php
+*.vue        diff=html
+
+# Binary assets — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

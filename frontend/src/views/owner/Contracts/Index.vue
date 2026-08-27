@@ -32,7 +32,7 @@ const filteredContracts = computed(() => {
   return contractsStore.contracts.filter((contract) => {
     return (
       String(contract.id ?? '').toLowerCase().includes(query) ||
-      String(contract.customer?.name ?? '').toLowerCase().includes(query) ||
+      String(contract.user?.name ?? '').toLowerCase().includes(query) ||
       String(
         contract.unit?.building?.property?.name ?? ''
       ).toLowerCase().includes(query) ||
@@ -102,7 +102,7 @@ const filteredContracts = computed(() => {
             </td>
 
             <td>
-              {{ contract.customer?.name ?? '-' }}
+              {{ contract.user?.name ?? '-' }}
             </td>
 
             <td>

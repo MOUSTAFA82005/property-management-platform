@@ -2,366 +2,153 @@
 
 namespace Tests\Feature;
 
+use App\Http\Resources\PropertyResource;
 use App\Models\Building;
+use App\Models\Contract;
+use App\Models\Payment;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Tests\TestCase;
 
+/**
+ * Covers the property/building/unit schema as it exists today.
+ *
+ * The original version of this file exercised POST/PUT/DELETE /api/properties
+ * and /api/units against a `manager_id` column. Both were replaced: property
+ * writes now live under /api/owner/*, and `manager_id` was renamed to
+ * `owner_id` by the 2026_08_25_100001 migration. These tests target the
+ * current architecture instead.
+ */
 class PropertyAndUnitTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected User $user;
-
-    protected function setUp(): void
+    private function makeOwnerWithUnit(string $unitNumber = '101'): array
     {
-        parent::setUp();
-        $this->user = User::factory()->create();
-    }
+        $owner = User::factory()->owner()->create();
 
-    public function test_can_list_properties(): void
-    {
-        $property = Property::create([
-            'name' => 'Sunset Residences',
-            'address' => '123 Ocean Drive',
-            'city' => 'Miami',
-            'description' => 'Luxury beachfront apartments',
+        $property = Property::query()->create([
+            'owner_id'      => $owner->id,
+            'name'          => 'Nile View Tower',
+            'address'       => '12 Corniche Street',
+            'city'          => 'Cairo',
+            'description'   => 'Riverside apartments',
             'property_type' => 'Apartment Building',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
+            'status'        => 'active',
         ]);
 
-        $response = $this->getJson('/api/properties');
+        $building = Building::query()->create([
+            'property_id'  => $property->id,
+            'name'         => 'Tower A',
+            'floors_count' => 8,
+        ]);
 
-        $response->assertStatus(200)
-            ->assertJsonFragment([
-                'id' => $property->id,
-                'name' => 'Sunset Residences',
-                'city' => 'Miami',
-            ]);
+        $unit = Unit::query()->create([
+            'building_id'  => $building->id,
+            'unit_number'  => $unitNumber,
+            'floor'        => 1,
+            'unit_type'    => '2 BHK',
+            'area'         => 120.5,
+            'bedrooms'     => 2,
+            'bathrooms'    => 2,
+            'monthly_rent' => 15000,
+            'status'       => 'available',
+        ]);
+
+        return [$owner, $property, $building, $unit];
     }
 
-    public function test_can_create_property(): void
+    // ---------------------------------------------------------------
+    // Schema / relationships
+    // ---------------------------------------------------------------
+
+    public function test_a_property_belongs_to_its_owner_via_owner_id(): void
     {
-        $payload = [
-            'name' => 'Palm Tower',
-            'address' => '456 Palm St',
-            'city' => 'Riyadh',
-            'description' => 'Commercial and residential tower',
-            'property_type' => 'Commercial Tower',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
-        ];
+        [$owner, $property] = $this->makeOwnerWithUnit();
 
-        $response = $this->postJson('/api/properties', $payload);
-
-        $response->assertStatus(201)
-            ->assertJsonFragment([
-                'name' => 'Palm Tower',
-                'city' => 'Riyadh',
-            ]);
-
-        $this->assertDatabaseHas('properties', [
-            'name' => 'Palm Tower',
-            'city' => 'Riyadh',
-        ]);
-
-      
-        $this->assertDatabaseHas('buildings', [
-            'name' => 'Palm Tower - Main',
-        ]);
+        $this->assertSame($owner->id, $property->owner_id);
+        $this->assertSame($owner->id, $property->owner->id);
+        $this->assertTrue($owner->properties->contains($property));
     }
 
-    public function test_property_validation_rules(): void
+    public function test_properties_reach_units_through_buildings(): void
     {
-        $response = $this->postJson('/api/properties', []);
+        [, $property, $building, $unit] = $this->makeOwnerWithUnit();
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['name', 'address', 'city', 'property_type']);
+        $this->assertTrue($property->buildings->contains($building));
+        $this->assertTrue($property->units()->get()->contains($unit));
+        $this->assertSame($property->id, $unit->property->id);
     }
 
-    public function test_can_show_property(): void
+    public function test_unit_payments_resolve_through_contracts(): void
     {
-        $property = Property::create([
-            'name' => 'Green Valley Villa',
-            'address' => '789 Valley Way',
-            'city' => 'Austin',
-            'property_type' => 'Residential Complex',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
+        [, , , $unit] = $this->makeOwnerWithUnit();
+        $customer = User::factory()->customer()->create();
+
+        $contract = Contract::query()->create([
+            'user_id'          => $customer->id,
+            'unit_id'          => $unit->id,
+            'start_date'       => now()->toDateString(),
+            'end_date'         => now()->addYear()->toDateString(),
+            'monthly_rent'     => 15000,
+            'security_deposit' => 30000,
+            'status'           => 'active',
         ]);
 
-        $response = $this->getJson("/api/properties/{$property->id}");
+        $payment = Payment::query()->create([
+            'contract_id' => $contract->id,
+            'amount'      => 15000,
+            'due_date'    => now()->toDateString(),
+            'status'      => 'pending',
+            'reference'   => 'PAY-UNIT-1',
+        ]);
 
-        $response->assertStatus(200)
-            ->assertJsonFragment([
-                'id' => $property->id,
-                'name' => 'Green Valley Villa',
-            ]);
+        // payments has no unit_id column — this must go through contracts.
+        $this->assertTrue($unit->payments()->get()->contains($payment));
+        $this->assertTrue($customer->payments()->get()->contains($payment));
     }
 
-    public function test_can_update_property(): void
+    // ---------------------------------------------------------------
+    // Resource shape
+    // ---------------------------------------------------------------
+
+    public function test_property_resource_exposes_owner_not_manager(): void
     {
-        $property = Property::create([
-            'name' => 'Old Name',
-            'address' => '100 Main St',
-            'city' => 'Dallas',
-            'property_type' => 'Residential Complex',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
-        ]);
+        [$owner, $property] = $this->makeOwnerWithUnit();
 
-        $response = $this->putJson("/api/properties/{$property->id}", [
-            'name' => 'Updated Property Name',
-            'status' => 'inactive',
-        ]);
+        $payload = (new PropertyResource($property->load('owner')))
+            ->toArray(Request::create('/api/properties'));
 
-        $response->assertStatus(200)
-            ->assertJsonFragment([
-                'name' => 'Updated Property Name',
-                'status' => 'inactive',
-            ]);
+        $this->assertArrayNotHasKey('manager_id', $payload);
+        $this->assertArrayNotHasKey('manager', $payload);
 
-        $this->assertDatabaseHas('properties', [
-            'id' => $property->id,
-            'name' => 'Updated Property Name',
-            'status' => 'inactive',
-        ]);
+        $this->assertSame($owner->id, $payload['owner_id']);
+        $this->assertSame($owner->name, $payload['owner']['name']);
+        $this->assertSame(1, $payload['units_count']);
+        $this->assertSame(1, $payload['available_units_count']);
+        $this->assertSame(15000.0, $payload['from_price']);
+        $this->assertFalse($payload['is_published']);
     }
 
-    public function test_can_delete_property(): void
+    // ---------------------------------------------------------------
+    // Route surface
+    // ---------------------------------------------------------------
+
+    public function test_owner_property_and_unit_routes_require_authentication(): void
     {
-        $property = Property::create([
-            'name' => 'Property To Delete',
-            'address' => '321 Delete Ave',
-            'city' => 'Chicago',
-            'property_type' => 'Commercial',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
-        ]);
-
-        $response = $this->deleteJson("/api/properties/{$property->id}");
-
-        $response->assertStatus(200)
-            ->assertJsonFragment([
-                'message' => 'Property deleted successfully.',
-            ]);
-
-        $this->assertDatabaseMissing('properties', [
-            'id' => $property->id,
-        ]);
+        $this->getJson('/api/owner/properties')->assertUnauthorized();
+        $this->postJson('/api/owner/properties', [])->assertUnauthorized();
+        $this->getJson('/api/owner/units')->assertUnauthorized();
+        $this->getJson('/api/owner/buildings')->assertUnauthorized();
     }
 
-    public function test_can_create_unit_under_property(): void
+    public function test_property_writes_are_no_longer_exposed_on_the_public_path(): void
     {
-        $property = Property::create([
-            'name' => 'Skyline Heights',
-            'address' => '500 Skyline Blvd',
-            'city' => 'New York',
-            'property_type' => 'Apartment Building',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
-        ]);
-
-        $payload = [
-            'property_id' => $property->id,
-            'unit_number' => '101A',
-            'unit_type' => '2 BHK',
-            'floor' => 1,
-            'monthly_rent' => 2500.00,
-            'area' => 95.5,
-            'bedrooms' => 2,
-            'bathrooms' => 2,
-            'status' => 'available',
-        ];
-
-        $response = $this->postJson('/api/units', $payload);
-
-        $response->assertStatus(201)
-            ->assertJsonFragment([
-                'unit_number' => '101A',
-                'unit_type' => '2 BHK',
-                'monthly_rent' => 2500,
-                'status' => 'available',
-            ]);
-
-        $this->assertDatabaseHas('units', [
-            'unit_number' => '101A',
-            'monthly_rent' => 2500.00,
-        ]);
-    }
-
-    public function test_can_list_units_for_specific_property(): void
-    {
-        $property = Property::create([
-            'name' => 'Marina Bay Residences',
-            'address' => '10 Marina Way',
-            'city' => 'Dubai',
-            'property_type' => 'Apartment Building',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
-        ]);
-
-        $building = Building::create([
-            'property_id' => $property->id,
-            'name' => 'Tower A',
-            'floors_count' => 10,
-        ]);
-
-        Unit::create([
-            'building_id' => $building->id,
-            'unit_number' => 'A-101',
-            'unit_type' => '1 BHK',
-            'floor' => 1,
-            'bedrooms' => 1,
-            'bathrooms' => 1,
-            'monthly_rent' => 1800.00,
-            'status' => 'available',
-        ]);
-
-        Unit::create([
-            'building_id' => $building->id,
-            'unit_number' => 'A-102',
-            'unit_type' => '2 BHK',
-            'floor' => 1,
-            'bedrooms' => 2,
-            'bathrooms' => 2,
-            'monthly_rent' => 2400.00,
-            'status' => 'occupied',
-        ]);
-
-        $response = $this->getJson("/api/properties/{$property->id}/units");
-
-        $response->assertStatus(200)
-            ->assertJsonCount(2, 'data')
-            ->assertJsonFragment(['unit_number' => 'A-101'])
-            ->assertJsonFragment(['unit_number' => 'A-102']);
-    }
-
-    public function test_can_show_unit(): void
-    {
-        $property = Property::create([
-            'name' => 'Highland Park',
-            'address' => '99 Park Ave',
-            'city' => 'Seattle',
-            'property_type' => 'Residential',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
-        ]);
-
-        $building = Building::create([
-            'property_id' => $property->id,
-            'name' => 'Main Building',
-            'floors_count' => 5,
-        ]);
-
-        $unit = Unit::create([
-            'building_id' => $building->id,
-            'unit_number' => '301',
-            'unit_type' => 'Studio',
-            'floor' => 3,
-            'bedrooms' => 1,
-            'bathrooms' => 1,
-            'monthly_rent' => 1200.00,
-            'status' => 'available',
-        ]);
-
-        $response = $this->getJson("/api/units/{$unit->id}");
-
-        $response->assertStatus(200)
-            ->assertJsonFragment([
-                'id' => $unit->id,
-                'unit_number' => '301',
-                'unit_type' => 'Studio',
-            ]);
-    }
-
-    public function test_can_update_unit(): void
-    {
-        $property = Property::create([
-            'name' => 'Cedar Crest',
-            'address' => '88 Cedar Rd',
-            'city' => 'Portland',
-            'property_type' => 'Residential',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
-        ]);
-
-        $building = Building::create([
-            'property_id' => $property->id,
-            'name' => 'Main',
-            'floors_count' => 3,
-        ]);
-
-        $unit = Unit::create([
-            'building_id' => $building->id,
-            'unit_number' => '102',
-            'unit_type' => '1 BHK',
-            'floor' => 1,
-            'bedrooms' => 1,
-            'bathrooms' => 1,
-            'monthly_rent' => 1100.00,
-            'status' => 'available',
-        ]);
-
-        $response = $this->putJson("/api/units/{$unit->id}", [
-            'monthly_rent' => 1350.00,
-            'status' => 'occupied',
-        ]);
-
-        $response->assertStatus(200)
-            ->assertJsonFragment([
-                'monthly_rent' => 1350,
-                'status' => 'occupied',
-            ]);
-
-        $this->assertDatabaseHas('units', [
-            'id' => $unit->id,
-            'monthly_rent' => 1350.00,
-            'status' => 'occupied',
-        ]);
-    }
-
-    public function test_can_delete_unit(): void
-    {
-        $property = Property::create([
-            'name' => 'Apex Towers',
-            'address' => '1000 Apex Way',
-            'city' => 'Denver',
-            'property_type' => 'Commercial',
-            'status' => 'active',
-            'manager_id' => $this->user->id,
-        ]);
-
-        $building = Building::create([
-            'property_id' => $property->id,
-            'name' => 'Main',
-            'floors_count' => 2,
-        ]);
-
-        $unit = Unit::create([
-            'building_id' => $building->id,
-            'unit_number' => '404',
-            'unit_type' => 'Office',
-            'floor' => 4,
-            'bedrooms' => 0,
-            'bathrooms' => 1,
-            'monthly_rent' => 3000.00,
-            'status' => 'available',
-        ]);
-
-        $response = $this->deleteJson("/api/units/{$unit->id}");
-
-        $response->assertStatus(200)
-            ->assertJsonFragment([
-                'message' => 'Unit deleted successfully.',
-            ]);
-
-        $this->assertDatabaseMissing('units', [
-            'id' => $unit->id,
-        ]);
+        // Writes moved to /api/owner/properties; the old unscoped routes are gone.
+        $this->postJson('/api/properties', [])->assertStatus(405);
+        $this->postJson('/api/units', [])->assertNotFound();
     }
 }
-

@@ -28,16 +28,17 @@ class PropertyResource extends JsonResource
             'description' => $this->description,
             'property_type' => $this->property_type,
             'status' => $this->status,
-            'manager_id' => $this->manager_id,
+            'is_published' => (bool) $this->is_published,
+            'owner_id' => $this->owner_id,
             'buildings_count' => max(1, $buildingsCount),
             'units_count' => $totalUnits,
             'available_units_count' => $availableUnits,
             'from_price' => (float) $minRent,
-            'manager' => $this->whenLoaded('manager', function () {
+            'owner' => $this->whenLoaded('owner', function () {
                 return [
-                    'id' => $this->manager->id,
-                    'name' => $this->manager->name,
-                    'email' => $this->manager->email,
+                    'id' => $this->owner->id,
+                    'name' => $this->owner->name,
+                    'email' => $this->owner->email,
                 ];
             }),
             'units' => UnitResource::collection($this->whenLoaded('units')),

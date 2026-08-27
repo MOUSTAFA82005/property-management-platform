@@ -70,8 +70,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/properties/{property}/units', [CustomerUnitController::class, 'index']);
     Route::get('/units/{unit}', [CustomerUnitController::class, 'show']);
 
+    // apiResource would generate the parameter {purchase_request}, which does not
+    // match the $purchaseRequest argument on the controller — implicit model
+    // binding silently skips when the names differ. Pin the parameter name.
     Route::apiResource('/purchase-requests', CustomerPurchaseRequestController::class)
-        ->only(['index', 'store', 'show', 'destroy']);
+        ->only(['index', 'store', 'show', 'destroy'])
+        ->parameters(['purchase-requests' => 'purchaseRequest']);
 
     Route::get('/contracts', [CustomerContractController::class, 'index']);
     Route::get('/contracts/{contract}', [CustomerContractController::class, 'show']);

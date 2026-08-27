@@ -99,7 +99,7 @@ onMounted(() => {
                 <label>Customer</label>
                 <input
                   class="owner-input"
-                  :value="contract.customer?.name || '-'"
+                  :value="contract.user?.name || '-'"
                   readonly
                 >
               </div>
@@ -108,7 +108,7 @@ onMounted(() => {
                 <label>Email</label>
                 <input
                   class="owner-input"
-                  :value="contract.customer?.email || '-'"
+                  :value="contract.user?.email || '-'"
                   readonly
                 >
               </div>

@@ -20,7 +20,6 @@ class ContractController extends Controller
 
         $contracts = Contract::with([
             'user',
-            'customer',
             'unit.building.property',
             'payments',
         ])
@@ -39,7 +38,7 @@ class ContractController extends Controller
         Gate::authorize('create', Contract::class);
 
         $validated = $request->validate([
-            'customer_id'      => ['required', 'integer', 'exists:users,id'],
+            'user_id'          => ['required', 'integer', 'exists:users,id'],
             'unit_id'          => ['required', 'integer', 'exists:units,id'],
             'start_date'       => ['required', 'date'],
             'end_date'         => ['required', 'date', 'after:start_date'],
@@ -49,7 +48,7 @@ class ContractController extends Controller
             'notes'            => ['nullable', 'string'],
         ]);
 
-        $customer = User::findOrFail($validated['customer_id']);
+        $customer = User::findOrFail($validated['user_id']);
 
         if ($customer->role !== 'customer') {
             return response()->json([
@@ -80,7 +79,6 @@ class ContractController extends Controller
 
         $contract->load([
             'user',
-            'customer',
             'unit.building.property',
             'payments',
         ]);
@@ -101,7 +99,6 @@ class ContractController extends Controller
 
         $contract->load([
             'user',
-            'customer',
             'unit.building.property',
             'payments',
         ]);
@@ -119,7 +116,7 @@ class ContractController extends Controller
         $this->authorizeOwner($request, $contract);
 
         $validated = $request->validate([
-            'customer_id'       => ['sometimes', 'integer', 'exists:users,id'],
+            'user_id'           => ['sometimes', 'integer', 'exists:users,id'],
             'unit_id'           => ['sometimes', 'integer', 'exists:units,id'],
             'start_date'       => ['sometimes', 'date'],
             'end_date'         => ['sometimes', 'date', 'after:start_date'],
@@ -129,8 +126,8 @@ class ContractController extends Controller
             'notes'             => ['nullable', 'string'],
         ]);
 
-        if (isset($validated['customer_id'])) {
-            $customer = User::findOrFail($validated['customer_id']);
+        if (isset($validated['user_id'])) {
+            $customer = User::findOrFail($validated['user_id']);
 
             if ($customer->role !== 'customer') {
                 return response()->json([
@@ -154,7 +151,6 @@ class ContractController extends Controller
 
         $contract->load([
             'user',
-            'customer',
             'unit.building.property',
             'payments',
         ]);
