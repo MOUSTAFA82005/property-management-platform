@@ -29,6 +29,7 @@ const closeMobile = () => {
       <!-- Desktop Nav -->
       <nav class="nav-links">
         <RouterLink to="/" class="nav-link" :class="{ active: isActive('customer.home') }">Home</RouterLink>
+
         <RouterLink to="/properties" class="nav-link" :class="{ active: isActive('customer.properties.index') }">Properties</RouterLink>
         <RouterLink to="/purchase-requests" class="nav-link">Requests</RouterLink>
         <RouterLink to="/contracts" class="nav-link">Contracts</RouterLink>

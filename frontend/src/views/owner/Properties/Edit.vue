@@ -1,48 +1,30 @@
-<script setup>
-import { RouterLink, useRoute } from 'vue-router'
-
-const route = useRoute()
-const id = route.params.id
-</script>
-
+<script
+    setup>    import { RouterLink, useRoute } from 'vue-router'; import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'; const id = useRoute().params.id</script>
 <template>
-  <div>
-    <RouterLink to="/owner/properties" class="sk-back">&larr; Back to Properties</RouterLink>
-    
-    <div class="sk-header">
-      <h1>Edit Property #{{ id }}</h1>
-      <p>Update an existing property listing.</p>
+    <RouterLink to="/owner/properties" class="owner-back"><i class="fa-solid fa-arrow-left"></i> Back to Properties
+    </RouterLink>
+    <OwnerPageHeader :title="`Edit Property #${id}`" subtitle="Update property information and availability." />
+    <div class="owner-card owner-form-card">
+        <div class="owner-form">
+            <div class="owner-form-grid">
+                <div class="owner-field"><label>Property name</label><input class="owner-input"
+                        value="Ocean View Villa"></div>
+                <div class="owner-field"><label>Location</label><input class="owner-input" value="Alexandria"></div>
+                <div class="owner-field"><label>Property type</label><select class="owner-select">
+                        <option selected>Villa</option>
+                        <option>Apartment</option>
+                        <option>Commercial</option>
+                    </select></div>
+                <div class="owner-field"><label>Status</label><select class="owner-select">
+                        <option selected>Active</option>
+                        <option>Archived</option>
+                    </select></div>
+                <div class="owner-field full"><label>Description</label><textarea
+                        class="owner-textarea">A luxury villa located by the sea.</textarea></div>
+            </div>
+            <div class="owner-form-actions"><button class="owner-btn owner-btn-primary">Update Property</button>
+                <RouterLink to="/owner/properties" class="owner-btn owner-btn-light">Cancel</RouterLink>
+            </div>
+        </div>
     </div>
-
-    <div class="sk-form">
-      <div class="sk-form-group">
-        <label class="sk-form-label">Property Name</label>
-        <input type="text" class="sk-form-input" value="Ocean View Villa" />
-      </div>
-
-      <div class="sk-form-group">
-        <label class="sk-form-label">Location</label>
-        <input type="text" class="sk-form-input" value="Alexandria" />
-      </div>
-
-      <div class="sk-form-group">
-        <label class="sk-form-label">Property Type</label>
-        <select class="sk-form-select">
-          <option value="apartment">Apartment</option>
-          <option value="villa" selected>Villa</option>
-          <option value="commercial">Commercial</option>
-        </select>
-      </div>
-
-      <div class="sk-form-group">
-        <label class="sk-form-label">Description</label>
-        <textarea class="sk-form-textarea">A luxury villa located by the sea.</textarea>
-      </div>
-
-      <div class="sk-form-actions">
-        <button class="sk-btn sk-btn-primary">Update Property</button>
-        <RouterLink to="/owner/properties" class="sk-btn sk-btn-secondary">Cancel</RouterLink>
-      </div>
-    </div>
-  </div>
 </template>

@@ -1,52 +1,47 @@
-<script setup>
-const placeholderRequests = [
-  { id: 'PR-1001', customer: 'John Doe', property: 'Ocean View Villa', unit: 'Unit A1', date: 'Oct 12, 2026', status: 'Pending' },
-  { id: 'PR-1002', customer: 'Alice Brown', property: 'Downtown Penthouse', unit: 'Unit B2', date: 'Oct 10, 2026', status: 'Approved' },
-]
-</script>
-
+<script
+    setup>    import { RouterLink } from 'vue-router'; import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'; import StatusBadge from '../../../components/owner/StatusBadge.vue'; const requests = [{ id: 'PR-1001', customer: 'John Doe', property: 'Ocean View Villa', unit: 'Unit A1', date: 'Oct 12, 2026', status: 'Pending' }, { id: 'PR-1002', customer: 'Alice Brown', property: 'Downtown Penthouse', unit: 'Unit B2', date: 'Oct 10, 2026', status: 'Approved' }, { id: 'PR-1003', customer: 'Jane Smith', property: 'Palm Residence', unit: 'Unit C4', date: 'Oct 08, 2026', status: 'Rejected' }]</script>
 <template>
-  <div>
-    <div class="sk-header">
-      <h1>Purchase Requests</h1>
-      <p>Review and act on property purchase inquiries from customers.</p>
+    <OwnerPageHeader title="Purchase Requests" subtitle="Review and manage customer requests across your properties." />
+    <div class="owner-card">
+        <div class="owner-card-head">
+            <div class="owner-search-row"><input class="owner-search" placeholder="Search requests..." /><select
+                    class="owner-select">
+                    <option>All statuses</option>
+                    <option>Pending</option>
+                    <option>Approved</option>
+                    <option>Rejected</option>
+                </select></div><span>{{ requests.length }} requests</span>
+        </div>
+        <div class="owner-table-wrap">
+            <table class="owner-table">
+                <thead>
+                    <tr>
+                        <th>Request</th>
+                        <th>Customer</th>
+                        <th>Property</th>
+                        <th>Unit</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="r in requests" :key="r.id">
+                        <td><strong>{{ r.id }}</strong></td>
+                        <td>{{ r.customer }}</td>
+                        <td>{{ r.property }}</td>
+                        <td>{{ r.unit }}</td>
+                        <td>{{ r.date }}</td>
+                        <td>
+                            <StatusBadge :status="r.status" />
+                        </td>
+                        <td>
+                            <RouterLink :to="`/owner/purchase-requests/${r.id}`" class="owner-btn owner-btn-light">
+                                Review</RouterLink>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-
-    <div class="sk-table-wrap">
-      <table class="sk-table">
-        <thead>
-          <tr>
-            <th>Request ID</th>
-            <th>Customer</th>
-            <th>Property</th>
-            <th>Unit</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="req in placeholderRequests" :key="req.id">
-            <td><strong>{{ req.id }}</strong></td>
-            <td>{{ req.customer }}</td>
-            <td>{{ req.property }}</td>
-            <td>{{ req.unit }}</td>
-            <td>{{ req.date }}</td>
-            <td>
-              <span class="sk-badge" :class="req.status === 'Pending' ? 'sk-badge-pending' : 'sk-badge-approved'">{{ req.status }}</span>
-            </td>
-            <td>
-              <div v-if="req.status === 'Pending'" style="display: flex; gap: 0.25rem;">
-                <button class="sk-btn sk-btn-success">Approve</button>
-                <button class="sk-btn sk-btn-danger">Reject</button>
-              </div>
-              <div v-else>
-                <button class="sk-btn sk-btn-secondary" disabled>Processed</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 </template>

@@ -1,45 +1,32 @@
-<script setup>
-import { RouterLink } from 'vue-router'
-</script>
-
+<script
+    setup>    import { RouterLink } from 'vue-router'; import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'</script>
 <template>
-  <div>
-    <RouterLink to="/owner/properties" class="sk-back">&larr; Back to Properties</RouterLink>
-    
-    <div class="sk-header">
-      <h1>Add New Property</h1>
-      <p>Create a new property listing.</p>
+    <RouterLink to="/owner/properties" class="owner-back"><i class="fa-solid fa-arrow-left"></i> Back to Properties
+    </RouterLink>
+    <OwnerPageHeader title="Add New Property" subtitle="Create a new property listing for your portfolio." />
+    <div class="owner-card owner-form-card">
+        <div class="owner-form">
+            <div class="owner-form-grid">
+                <div class="owner-field"><label>Property name</label><input class="owner-input"
+                        placeholder="e.g. Nile View Tower"></div>
+                <div class="owner-field"><label>Location</label><input class="owner-input"
+                        placeholder="e.g. Alexandria"></div>
+                <div class="owner-field"><label>Property type</label><select class="owner-select">
+                        <option>Apartment</option>
+                        <option>Villa</option>
+                        <option>Commercial</option>
+                        <option>Penthouse</option>
+                    </select></div>
+                <div class="owner-field"><label>Status</label><select class="owner-select">
+                        <option>Active</option>
+                        <option>Draft</option>
+                    </select></div>
+                <div class="owner-field full"><label>Description</label><textarea class="owner-textarea"
+                        placeholder="Describe the property..."></textarea></div>
+            </div>
+            <div class="owner-form-actions"><button class="owner-btn owner-btn-primary">Save Property</button>
+                <RouterLink to="/owner/properties" class="owner-btn owner-btn-light">Cancel</RouterLink>
+            </div>
+        </div>
     </div>
-
-    <div class="sk-form">
-      <div class="sk-form-group">
-        <label class="sk-form-label">Property Name</label>
-        <input type="text" class="sk-form-input" placeholder="e.g. Nile View Tower" />
-      </div>
-
-      <div class="sk-form-group">
-        <label class="sk-form-label">Location</label>
-        <input type="text" class="sk-form-input" placeholder="e.g. Cairo" />
-      </div>
-
-      <div class="sk-form-group">
-        <label class="sk-form-label">Property Type</label>
-        <select class="sk-form-select">
-          <option value="apartment">Apartment</option>
-          <option value="villa">Villa</option>
-          <option value="commercial">Commercial</option>
-        </select>
-      </div>
-
-      <div class="sk-form-group">
-        <label class="sk-form-label">Description</label>
-        <textarea class="sk-form-textarea" placeholder="Detailed property description..."></textarea>
-      </div>
-
-      <div class="sk-form-actions">
-        <button class="sk-btn sk-btn-primary">Save Property</button>
-        <RouterLink to="/owner/properties" class="sk-btn sk-btn-secondary">Cancel</RouterLink>
-      </div>
-    </div>
-  </div>
 </template>
