@@ -107,7 +107,7 @@ const expiredCount   = computed(() => contractsStore.contracts.filter((c) => ['e
         <tbody>
           <tr v-for="c in contractsStore.contracts" :key="c.id">
             <td><strong>CTR-{{ String(c.id).padStart(4, '0') }}</strong></td>
-            <td>{{ c.unit?.property?.name || c.property?.name || '—' }}</td>
+            <td>{{ c.unit?.property_name || '—' }}</td>
             <td>{{ c.unit?.unit_number || '—' }}</td>
             <td>{{ formatDate(c.start_date) }}</td>
             <td>{{ formatDate(c.end_date) }}</td>

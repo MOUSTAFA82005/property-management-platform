@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import {
   Chart,
   LineController,
@@ -21,7 +21,19 @@ Chart.register(
   Filler
 )
 
+/**
+ * Collected revenue per month, straight from GET /api/owner/dashboard.
+ * The component holds no figures of its own.
+ */
+const props = defineProps({
+  payments: { type: Object, default: null },
+  series: { type: Array, default: () => [] },
+})
+
 const chartCanvas = ref(null)
+
+const labels = computed(() => props.series.map((point) => point.label))
+const values = computed(() => props.series.map((point) => Number(point.total) || 0))
 
 let revenueChart = null
 
@@ -32,27 +44,13 @@ onMounted(() => {
     type: 'line',
 
     data: {
-      labels: [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June'
-      ],
+      labels: labels.value,
 
       datasets: [
         {
           label: 'Revenue',
 
-          data: [
-            85000,
-            105000,
-            95000,
-            140000,
-            175000,
-            220000
-          ],
+          data: values.value,
 
           borderColor: '#864CFF',
           backgroundColor: 'rgba(134, 76, 255, 0.10)',
@@ -136,6 +134,13 @@ onMounted(() => {
       }
     }
   })
+})
+
+watch([labels, values], () => {
+  if (!revenueChart) return
+  revenueChart.data.labels = labels.value
+  revenueChart.data.datasets[0].data = values.value
+  revenueChart.update()
 })
 
 onBeforeUnmount(() => {

@@ -18,7 +18,7 @@ class ContractController extends Controller
 
         $contracts = $request->user()
             ->contracts()
-            ->with(['payments'])
+            ->with(['unit.building.property', 'payments'])
             ->latest()
             ->get();
 
@@ -30,7 +30,7 @@ class ContractController extends Controller
     {
         Gate::authorize('view', $contract);
 
-        $contract->load(['user', 'payments']);
+        $contract->load(['user', 'unit.building.property', 'payments']);
 
         return (new ContractResource($contract))->response();
     }

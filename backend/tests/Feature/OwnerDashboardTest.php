@@ -133,6 +133,45 @@ class OwnerDashboardTest extends TestCase
         $this->assertSame([], $data['property_overview']);
     }
 
+    public function test_revenue_by_month_covers_six_months_and_only_counts_this_owners_paid_money(): void
+    {
+        $owner = $this->makeOwner();
+        $other = $this->makeOwner();
+
+        [, , $unit] = $this->makePortfolio($owner);
+        $contract = $this->makeContract($this->makeCustomer(), $unit);
+
+        $thisMonth = now()->startOfMonth();
+        $lastMonth = now()->startOfMonth()->subMonth();
+
+        $this->makePayment($contract, ['status' => 'paid', 'amount' => 5000, 'paid_date' => $thisMonth->toDateString()]);
+        $this->makePayment($contract, ['status' => 'paid', 'amount' => 2500, 'paid_date' => $thisMonth->toDateString()]);
+        $this->makePayment($contract, ['status' => 'paid', 'amount' => 4000, 'paid_date' => $lastMonth->toDateString()]);
+        // Unpaid money must not be counted as revenue.
+        $this->makePayment($contract, ['status' => 'overdue', 'amount' => 9999]);
+
+        // Another owner's collected money must never appear.
+        [, , $otherUnit] = $this->makePortfolio($other);
+        $otherContract = $this->makeContract($this->makeCustomer(), $otherUnit);
+        $this->makePayment($otherContract, ['status' => 'paid', 'amount' => 777777, 'paid_date' => $thisMonth->toDateString()]);
+
+        Sanctum::actingAs($owner);
+        $series = $this->getJson('/api/owner/dashboard')->assertOk()->json('data.revenue_by_month');
+
+        $this->assertCount(6, $series);
+
+        $byMonth = collect($series)->keyBy('month');
+        $this->assertEqualsWithDelta(7500, $byMonth[$thisMonth->format('Y-m')]['total'], 0.001);
+        $this->assertEqualsWithDelta(4000, $byMonth[$lastMonth->format('Y-m')]['total'], 0.001);
+
+        // Months with no collections are present with a zero, not missing.
+        $empty = collect($series)->firstWhere('month', now()->startOfMonth()->subMonths(5)->format('Y-m'));
+        $this->assertNotNull($empty);
+        $this->assertEqualsWithDelta(0, $empty['total'], 0.001);
+
+        $this->assertFalse(collect($series)->contains(fn ($m) => $m['total'] > 100000));
+    }
+
     public function test_the_dashboard_requires_an_authenticated_owner(): void
     {
         $this->getJson('/api/owner/dashboard')->assertUnauthorized();

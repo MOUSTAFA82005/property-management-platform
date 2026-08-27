@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 import {
     Chart,
@@ -16,7 +16,23 @@ Chart.register(
     Legend
 )
 
+/**
+ * Unit mix from GET /api/owner/dashboard.
+ *
+ * The three statuses the schema supports are available, occupied and
+ * reserved. Earlier mock data showed a fourth that does not exist.
+ */
+const props = defineProps({
+  units: { type: Object, default: null },
+})
+
 const chartCanvas = ref(null)
+
+const values = computed(() => [
+  props.units?.available ?? 0,
+  props.units?.occupied ?? 0,
+  props.units?.reserved ?? 0,
+])
 
 let unitsChart = null
 
@@ -30,22 +46,18 @@ onMounted(() => {
             data: {
                 labels: [
                     'Available',
-                    'Reserved',
-                    'Sold'
+                    'Occupied',
+                    'Reserved'
                 ],
 
                 datasets: [
                     {
-                        data: [
-                            45,
-                            20,
-                            35
-                        ],
+                        data: values.value,
 
                         backgroundColor: [
                             '#864CFF',
-                            '#F5B83D',
-                            '#E85D75'
+                            '#47BFFF',
+                            '#F5B83D'
                         ],
 
                         borderWidth: 0,
@@ -80,6 +92,12 @@ onMounted(() => {
         }
     )
 
+})
+
+watch(values, () => {
+    if (!unitsChart) return
+    unitsChart.data.datasets[0].data = values.value
+    unitsChart.update()
 })
 
 onBeforeUnmount(() => {

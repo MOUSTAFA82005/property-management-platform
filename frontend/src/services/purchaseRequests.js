@@ -9,8 +9,13 @@ export function getOwnerPurchaseRequest(id) {
   return api.get(`/owner/purchase-requests/${id}`)
 }
 
-export function updateOwnerPurchaseRequest(id, data) {
-  return api.put(`/owner/purchase-requests/${id}`, data)
+// The backend exposes explicit transitions rather than a generic update.
+export function approveOwnerPurchaseRequest(id) {
+  return api.post(`/owner/purchase-requests/${id}/approve`)
+}
+
+export function rejectOwnerPurchaseRequest(id) {
+  return api.post(`/owner/purchase-requests/${id}/reject`)
 }
 
 // Customer endpoints

@@ -44,7 +44,7 @@ class PropertyController extends Controller
         // does not exist, so this is a 404 rather than a 403.
         abort_unless($this->isPubliclyVisible($property), 404, 'Property not found.');
 
-        $property->load(['buildings.units'])->loadCount('buildings');
+        $property->load(['units.building', 'buildings'])->loadCount('buildings');
 
         return (new PropertyResource($property))->response();
     }

@@ -4,7 +4,8 @@ import { useAuthStore } from './auth'
 import {
   getOwnerPurchaseRequests,
   getOwnerPurchaseRequest,
-  updateOwnerPurchaseRequest,
+  approveOwnerPurchaseRequest,
+  rejectOwnerPurchaseRequest,
   getCustomerPurchaseRequests,
   getCustomerPurchaseRequest,
   createCustomerPurchaseRequest,
@@ -65,11 +66,16 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
     }
   }
 
-  async function approveOrRejectRequest(id, data) {
+  /**
+   * The backend exposes approve/reject as explicit transitions and returns the
+   * updated request, so the response is what we store — never a guess.
+   */
+  async function transitionRequest(id, action) {
     loading.value = true
     resetError()
     try {
-      const res = await updateOwnerPurchaseRequest(id, data)
+      const call = action === 'approve' ? approveOwnerPurchaseRequest : rejectOwnerPurchaseRequest
+      const res = await call(id)
       const updated = res.data?.data || res.data
       const idx = purchaseRequests.value.findIndex((r) => r.id === id)
       if (idx !== -1) purchaseRequests.value[idx] = updated
@@ -82,6 +88,9 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
       loading.value = false
     }
   }
+
+  const approveRequest = (id) => transitionRequest(id, 'approve')
+  const rejectRequest = (id) => transitionRequest(id, 'reject')
 
   // Customer
   async function fetchCustomerPurchaseRequests(params = {}) {
@@ -137,8 +146,12 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
     loading.value = true
     resetError()
     try {
-      await cancelCustomerPurchaseRequest(id)
-      purchaseRequests.value = purchaseRequests.value.filter((r) => r.id !== id)
+      const res = await cancelCustomerPurchaseRequest(id)
+      const updated = res.data?.data || res.data
+      const idx = purchaseRequests.value.findIndex((r) => r.id === id)
+      if (idx !== -1 && updated?.id) purchaseRequests.value[idx] = updated
+      if (purchaseRequest.value?.id === id && updated?.id) purchaseRequest.value = updated
+      return updated
     } catch (e) {
       error.value = e.response?.data?.message || e.message
       throw e
@@ -172,7 +185,8 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
 
     fetchOwnerPurchaseRequests,
     fetchOwnerPurchaseRequest,
-    approveOrRejectRequest,
+    approveRequest,
+    rejectRequest,
 
     fetchCustomerPurchaseRequests,
     fetchCustomerPurchaseRequest,

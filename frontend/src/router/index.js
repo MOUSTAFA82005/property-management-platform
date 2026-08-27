@@ -70,6 +70,23 @@ const routes = [
         component: () => import('../views/owner/Units/Edit.vue'),
       },
 
+      // Buildings
+      {
+        path: 'buildings',
+        name: 'owner.buildings.index',
+        component: () => import('../views/owner/Buildings/Index.vue'),
+      },
+      {
+        path: 'buildings/create',
+        name: 'owner.buildings.create',
+        component: () => import('../views/owner/Buildings/Create.vue'),
+      },
+      {
+        path: 'buildings/:id/edit',
+        name: 'owner.buildings.edit',
+        component: () => import('../views/owner/Buildings/Edit.vue'),
+      },
+
       // Customers
       {
         path: 'customers',
@@ -111,16 +128,18 @@ const routes = [
         component: () => import('../views/owner/Contracts/Show.vue'),
       },
 
+      // Profile
+      {
+        path: 'profile',
+        name: 'owner.profile',
+        component: () => import('../views/owner/Profile.vue'),
+      },
+
       // Payments
       {
         path: 'payments',
         name: 'owner.payments.index',
         component: () => import('../views/owner/Payments/Index.vue'),
-      },
-      {
-        path: 'payments/create',
-        name: 'owner.payments.create',
-        component: () => import('../views/owner/Payments/Create.vue'),
       },
       {
         path: 'payments/:id',

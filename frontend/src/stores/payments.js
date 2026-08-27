@@ -1,22 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAuthStore } from './auth'
-import {
-  getOwnerPayments,
-  getOwnerPayment,
-  createOwnerPayment,
-  updateOwnerPayment,
-  deleteOwnerPayment,
-  getCustomerPayments,
-  getCustomerPayment,
-} from '../services/payments'
+// Imported under a namespace on purpose. When these were imported by bare
+// name, the store's own actions shadowed them and called themselves —
+// creating, updating or deleting a payment recursed until the stack blew.
+import * as paymentService from '../services/payments'
+import { extractItem, extractList, normalizeError } from '../services/pagination'
 
 export const usePaymentsStore = defineStore('payments', () => {
   const payments = ref([])
-  const payment  = ref(null)
-  const loading  = ref(false)
-  const error    = ref(null)
-
+  const payment = ref(null)
+  const loading = ref(false)
+  const error = ref(null)
   const meta = ref(null)
   const links = ref(null)
 
@@ -24,39 +19,24 @@ export const usePaymentsStore = defineStore('payments', () => {
     error.value = null
   }
 
-  function extractData(response) {
-    const body = response.data
-
-    if (Array.isArray(body)) {
-      return { data: body, meta: null, links: null }
-    }
-
-    if (body?.data && Array.isArray(body.data)) {
-      return {
-        data: body.data,
-        meta: body.meta || null,
-        links: body.links || null,
-      }
-    }
-
-    return { data: body ? [body] : [], meta: null, links: null }
+  function fail(e) {
+    error.value = normalizeError(e).message
+    throw e
   }
 
-  // ── Owner actions ──────────────────────────────────
+  // ── Owner ─────────────────────────────────────────────────────────
 
   async function fetchOwnerPayments(params = {}) {
     loading.value = true
     resetError()
     try {
-      const res = await getOwnerPayments(params)
-      const extracted = extractData(res)
+      const extracted = extractList(await paymentService.getOwnerPayments(params))
       payments.value = extracted.data
       meta.value = extracted.meta
       links.value = extracted.links
       return extracted.data
     } catch (e) {
-      error.value = e.response?.data?.message || e.message
-      throw e
+      fail(e)
     } finally {
       loading.value = false
     }
@@ -66,12 +46,10 @@ export const usePaymentsStore = defineStore('payments', () => {
     loading.value = true
     resetError()
     try {
-      const res = await getOwnerPayment(id)
-      payment.value = res.data?.data || res.data
+      payment.value = extractItem(await paymentService.getOwnerPayment(id))
       return payment.value
     } catch (e) {
-      error.value = e.response?.data?.message || e.message
-      throw e
+      fail(e)
     } finally {
       loading.value = false
     }
@@ -81,13 +59,11 @@ export const usePaymentsStore = defineStore('payments', () => {
     loading.value = true
     resetError()
     try {
-      const res = await createOwnerPayment(data)
-      const created = res.data?.data || res.data
+      const created = extractItem(await paymentService.createOwnerPayment(data))
       payments.value.unshift(created)
       return created
     } catch (e) {
-      error.value = e.response?.data?.message || e.message
-      throw e
+      fail(e)
     } finally {
       loading.value = false
     }
@@ -97,15 +73,13 @@ export const usePaymentsStore = defineStore('payments', () => {
     loading.value = true
     resetError()
     try {
-      const res = await updateOwnerPayment(id, data)
-      const updated = res.data?.data || res.data
-      const idx = payments.value.findIndex((p) => p.id === id)
-      if (idx !== -1) payments.value[idx] = updated
+      const updated = extractItem(await paymentService.updateOwnerPayment(id, data))
+      const index = payments.value.findIndex((p) => p.id === id)
+      if (index !== -1) payments.value[index] = updated
       payment.value = updated
       return updated
     } catch (e) {
-      error.value = e.response?.data?.message || e.message
-      throw e
+      fail(e)
     } finally {
       loading.value = false
     }
@@ -115,29 +89,29 @@ export const usePaymentsStore = defineStore('payments', () => {
     loading.value = true
     resetError()
     try {
-      await deleteOwnerPayment(id)
+      await paymentService.deleteOwnerPayment(id)
       payments.value = payments.value.filter((p) => p.id !== id)
+      if (payment.value?.id === id) payment.value = null
     } catch (e) {
-      error.value = e.response?.data?.message || e.message
-      throw e
+      fail(e)
     } finally {
       loading.value = false
     }
   }
 
-  // ── Customer actions ───────────────────────────────
+  // ── Customer ──────────────────────────────────────────────────────
 
-  async function fetchCustomerPayments() {
+  async function fetchCustomerPayments(params = {}) {
     loading.value = true
     resetError()
     try {
-      const res = await getCustomerPayments()
-      const extracted = extractData(res)
+      const extracted = extractList(await paymentService.getCustomerPayments(params))
       payments.value = extracted.data
+      meta.value = extracted.meta
+      links.value = extracted.links
       return extracted.data
     } catch (e) {
-      error.value = e.response?.data?.message || e.message
-      throw e
+      fail(e)
     } finally {
       loading.value = false
     }
@@ -147,33 +121,25 @@ export const usePaymentsStore = defineStore('payments', () => {
     loading.value = true
     resetError()
     try {
-      const res = await getCustomerPayment(id)
-      payment.value = res.data?.data || res.data
+      payment.value = extractItem(await paymentService.getCustomerPayment(id))
       return payment.value
     } catch (e) {
-      error.value = e.response?.data?.message || e.message
-      throw e
+      fail(e)
     } finally {
       loading.value = false
     }
   }
 
-  // ── Unified fetch (auto-selects owner vs customer) ─
+  // ── Role-aware entry points ───────────────────────────────────────
 
   async function fetchPayments(params = {}) {
     const auth = useAuthStore()
-    if (auth.isOwner()) {
-      return fetchOwnerPayments(params)
-    }
-    return fetchCustomerPayments()
+    return auth.isOwner() ? fetchOwnerPayments(params) : fetchCustomerPayments(params)
   }
 
   async function fetchPayment(id) {
     const auth = useAuthStore()
-    if (auth.isOwner()) {
-      return fetchOwnerPayment(id)
-    }
-    return fetchCustomerPayment(id)
+    return auth.isOwner() ? fetchOwnerPayment(id) : fetchCustomerPayment(id)
   }
 
   return {

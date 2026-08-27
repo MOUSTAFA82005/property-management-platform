@@ -64,9 +64,14 @@ class PublicCatalogTest extends TestCase
         $available = $this->makeUnit($building, ['status' => 'available']);
         $occupied = $this->makeUnit($building, ['status' => 'occupied']);
 
-        $this->getJson("/api/properties/{$property->id}")
+        $response = $this->getJson("/api/properties/{$property->id}")
             ->assertOk()
             ->assertJsonPath('data.id', $property->id);
+
+        // The detail payload must actually carry the units, not just a count.
+        $unitIds = collect($response->json('data.units'))->pluck('id');
+        $this->assertTrue($unitIds->contains($available->id));
+        $this->assertTrue($unitIds->contains($occupied->id));
 
         // The default listing is what a visitor can act on.
         $ids = collect($this->getJson("/api/properties/{$property->id}/units")->assertOk()->json('data'))->pluck('id');

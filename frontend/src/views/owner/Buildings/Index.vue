@@ -2,15 +2,12 @@
 import { onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
-import StatusBadge from '../../../components/owner/StatusBadge.vue'
-import { useUnitsStore, UNIT_STATUSES } from '../../../stores/units'
-import { formatMoney, humanStatus } from '../../../utils/format'
+import { useBuildingsStore } from '../../../stores/buildings'
 
 const route = useRoute()
-const store = useUnitsStore()
+const store = useBuildingsStore()
 
 const search = ref('')
-const status = ref('')
 const propertyId = ref(route.query.property_id || '')
 const confirmDelete = ref(null)
 const busy = ref(false)
@@ -19,15 +16,14 @@ const actionError = ref('')
 let timer = null
 
 async function load(page = 1) {
-  await store.fetchOwnerUnits({
+  await store.fetchBuildings({
     page,
     search: search.value || undefined,
-    status: status.value || undefined,
     property_id: propertyId.value || undefined,
   }).catch(() => {})
 }
 
-watch([search, status], () => {
+watch(search, () => {
   clearTimeout(timer)
   timer = setTimeout(() => load(1), 350)
 })
@@ -37,12 +33,11 @@ async function remove() {
   feedback.value = ''
   actionError.value = ''
   try {
-    await store.deleteUnit(confirmDelete.value.id)
-    feedback.value = `Unit ${confirmDelete.value.unit_number} was deleted.`
+    await store.deleteBuilding(confirmDelete.value.id)
+    feedback.value = `${confirmDelete.value.name} was deleted.`
     confirmDelete.value = null
   } catch (e) {
-    // 409 when contracts or purchase requests still reference the unit.
-    actionError.value = e.response?.data?.message || 'Could not delete that unit.'
+    actionError.value = e.response?.data?.message || 'Could not delete that building.'
     confirmDelete.value = null
   } finally {
     busy.value = false
@@ -54,10 +49,10 @@ onMounted(() => load())
 
 <template>
   <OwnerPageHeader
-    title="Units"
-    subtitle="Track availability, pricing and occupancy for every unit."
-    action-text="Add Unit"
-    action-to="/owner/units/create"
+    title="Buildings"
+    subtitle="Buildings group the units inside each of your properties."
+    action-text="Add Building"
+    action-to="/owner/buildings/create"
   />
 
   <div v-if="feedback" class="sk-alert-success">{{ feedback }}</div>
@@ -66,31 +61,27 @@ onMounted(() => load())
   <div class="owner-card">
     <div class="owner-card-head">
       <div class="owner-search-row">
-        <input v-model="search" class="owner-search" placeholder="Search unit number or type..." />
-        <select v-model="status" class="owner-select">
-          <option value="">All statuses</option>
-          <option v-for="s in UNIT_STATUSES" :key="s" :value="s">{{ humanStatus(s) }}</option>
-        </select>
+        <input v-model="search" class="owner-search" placeholder="Search buildings..." />
       </div>
-      <span v-if="store.meta">{{ store.meta.total }} units</span>
+      <span v-if="store.meta">{{ store.meta.total }} buildings</span>
     </div>
 
     <div v-if="store.loading" style="padding: 1.5rem;">
-      <div v-for="n in 4" :key="n" class="skel-line" style="height: 1.25rem; margin-bottom: .75rem;"></div>
+      <div v-for="n in 3" :key="n" class="skel-line" style="height: 1.25rem; margin-bottom: .75rem;"></div>
     </div>
 
     <div v-else-if="store.error" class="empty-box empty-box-error" style="margin: 1.5rem;">
-      <h3>Could not load your units</h3>
+      <h3>Could not load your buildings</h3>
       <p>{{ store.error }}</p>
       <button class="owner-btn owner-btn-primary" style="margin-top: 1rem;" @click="load()">Retry</button>
     </div>
 
-    <div v-else-if="store.units.length === 0" class="empty-box" style="margin: 1.5rem;">
-      <div class="empty-icon">🚪</div>
-      <h3>No units found</h3>
-      <p>Add a unit to one of your buildings to get started.</p>
-      <RouterLink to="/owner/units/create" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
-        Add Unit
+    <div v-else-if="store.buildings.length === 0" class="empty-box" style="margin: 1.5rem;">
+      <div class="empty-icon">🏗️</div>
+      <h3>No buildings yet</h3>
+      <p>Add a building to one of your properties before creating units.</p>
+      <RouterLink to="/owner/buildings/create" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+        Add Building
       </RouterLink>
     </div>
 
@@ -98,28 +89,25 @@ onMounted(() => load())
       <table class="owner-table">
         <thead>
           <tr>
-            <th>Unit</th>
-            <th>Property</th>
             <th>Building</th>
-            <th>Type</th>
-            <th>Area</th>
-            <th>Monthly rent</th>
-            <th>Status</th>
+            <th>Property</th>
+            <th>City</th>
+            <th>Floors</th>
+            <th>Units</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="u in store.units" :key="u.id">
-            <td><strong>{{ u.unit_number }}</strong></td>
-            <td>{{ u.property_name || '—' }}</td>
-            <td>{{ u.building?.name || '—' }}</td>
-            <td>{{ u.unit_type }}</td>
-            <td>{{ u.area ? u.area + ' m²' : '—' }}</td>
-            <td>{{ formatMoney(u.monthly_rent) }}</td>
-            <td><StatusBadge :status="humanStatus(u.status)" /></td>
+          <tr v-for="b in store.buildings" :key="b.id">
+            <td><strong>{{ b.name }}</strong></td>
+            <td>{{ b.property?.name || '—' }}</td>
+            <td>{{ b.property?.city || '—' }}</td>
+            <td>{{ b.floors_count }}</td>
+            <td>{{ b.units_count ?? 0 }}</td>
             <td>
-              <RouterLink :to="`/owner/units/${u.id}/edit`" class="owner-btn owner-btn-light">Edit</RouterLink>
-              <button class="owner-btn owner-btn-danger" @click="confirmDelete = u">Delete</button>
+              <RouterLink :to="`/owner/units?property_id=${b.property_id}`" class="owner-btn owner-btn-light">Units</RouterLink>
+              <RouterLink :to="`/owner/buildings/${b.id}/edit`" class="owner-btn owner-btn-light">Edit</RouterLink>
+              <button class="owner-btn owner-btn-danger" @click="confirmDelete = b">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -135,11 +123,11 @@ onMounted(() => load())
 
   <div v-if="confirmDelete" class="owner-modal-backdrop" @click.self="confirmDelete = null">
     <div class="owner-modal">
-      <h3>Delete unit {{ confirmDelete.unit_number }}?</h3>
-      <p>Units with contracts or purchase requests against them cannot be deleted.</p>
+      <h3>Delete {{ confirmDelete.name }}?</h3>
+      <p>Buildings whose units are under contract or have purchase requests cannot be deleted.</p>
       <div class="owner-form-actions">
         <button class="owner-btn owner-btn-danger" :disabled="busy" @click="remove">
-          {{ busy ? 'Deleting...' : 'Delete unit' }}
+          {{ busy ? 'Deleting...' : 'Delete building' }}
         </button>
         <button class="owner-btn owner-btn-light" @click="confirmDelete = null">Cancel</button>
       </div>

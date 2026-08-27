@@ -462,24 +462,37 @@ button.owner-nav-item {
 .status-active,
 .status-paid,
 .status-approved,
+.status-published,
 .status-available {
   background: #eaf9f1;
   color: #178550
 }
 
-.status-pending {
+.status-pending,
+.status-reserved {
   background: #fff5db;
   color: #a06a00
 }
 
+/* Occupied is not a warning — it is a healthy, let unit. */
+.status-occupied {
+  background: #eaf1fd;
+  color: #2a5fb0
+}
+
 .status-rejected,
 .status-sold,
+.status-expired,
+.status-terminated,
 .status-overdue {
   background: #fff0f1;
   color: #d44a5c
 }
 
-.status-closed {
+.status-closed,
+.status-draft,
+.status-inactive,
+.status-cancelled {
   background: #f0eff4;
   color: #6c6878
 }
@@ -878,4 +891,72 @@ button.owner-nav-item {
   .owner-form {
     padding: 15px
   }
+}
+
+/* ------------------------------------------------------------------
+   Owner modal + form feedback
+   Matches the existing owner card styling rather than introducing a
+   second visual language for dialogs.
+   ------------------------------------------------------------------ */
+
+.owner-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1050;
+}
+
+.owner-modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .25);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.owner-modal h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 .5rem;
+}
+
+.owner-modal p {
+  color: #64748b;
+  font-size: .9rem;
+  margin: 0 0 1.25rem;
+}
+
+.owner-field-error {
+  display: block;
+  margin-top: .35rem;
+  font-size: .775rem;
+  font-weight: 500;
+  color: #dc2626;
+}
+
+.owner-input.is-invalid,
+.owner-select.is-invalid,
+.owner-textarea.is-invalid {
+  border-color: #dc2626;
+}
+
+.owner-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+}
+
+.owner-empty h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: .4rem;
 }

@@ -15,6 +15,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -125,10 +126,53 @@ class DashboardController extends Controller
                         ->get()
                 ),
 
+                // Collected revenue for the last six months, for the dashboard chart.
+                'revenue_by_month' => $this->revenueByMonth($owner),
+
                 // Per-property unit breakdown, done in one grouped query.
                 'property_overview' => $this->propertyOverview($owner),
             ],
         ]);
+    }
+
+    /**
+     * Collected revenue per month over the last six months.
+     *
+     * Grouped in the database rather than in PHP. The month expression differs
+     * between MySQL (production) and SQLite (tests), so it is chosen per driver.
+     *
+     * @return array<int, array{month: string, label: string, total: float}>
+     */
+    private function revenueByMonth(User $owner, int $months = 6): array
+    {
+        $start = now()->startOfMonth()->subMonths($months - 1);
+
+        $expression = DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', paid_date)"
+            : "DATE_FORMAT(paid_date, '%Y-%m')";
+
+        $totals = Payment::query()
+            ->ownedBy($owner)
+            ->where('status', 'paid')
+            ->whereNotNull('paid_date')
+            ->whereDate('paid_date', '>=', $start->toDateString())
+            ->selectRaw("{$expression} as month, SUM(amount) as total")
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // Emit every month in the window so the chart has no gaps.
+        return collect(range(0, $months - 1))
+            ->map(function (int $offset) use ($start, $totals) {
+                $month = (clone $start)->addMonths($offset);
+                $key = $month->format('Y-m');
+
+                return [
+                    'month' => $key,
+                    'label' => $month->format('M Y'),
+                    'total' => round((float) ($totals[$key] ?? 0), 2),
+                ];
+            })
+            ->all();
     }
 
     private function relatedCustomerCount(User $owner): int

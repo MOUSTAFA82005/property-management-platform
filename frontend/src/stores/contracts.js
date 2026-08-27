@@ -103,7 +103,7 @@ export const useContractsStore = defineStore('contracts', () => {
 
       contracts.value.unshift(newContract)
 
-      return res.data
+      return newContract
     } catch (e) {
       error.value = e.response?.data?.message || e.message
       throw e

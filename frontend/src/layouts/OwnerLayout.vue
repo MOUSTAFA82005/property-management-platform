@@ -21,11 +21,13 @@ async function handleLogout() {
 const nav = [
   { label: 'Dashboard', to: '/owner/dashboard', icon: 'fa-solid fa-house', group: 'Main Menu' },
   { label: 'Properties', to: '/owner/properties', icon: 'fa-solid fa-building', group: 'Main Menu' },
+  { label: 'Buildings', to: '/owner/buildings', icon: 'fa-solid fa-city', group: 'Main Menu' },
   { label: 'Units', to: '/owner/units', icon: 'fa-solid fa-door-open', group: 'Main Menu' },
   { label: 'Customers', to: '/owner/customers', icon: 'fa-solid fa-users', group: 'Management' },
   { label: 'Purchase Requests', to: '/owner/purchase-requests', icon: 'fa-solid fa-file-circle-check', group: 'Management' },
   { label: 'Contracts', to: '/owner/contracts', icon: 'fa-solid fa-file-contract', group: 'Financials' },
   { label: 'Payments', to: '/owner/payments', icon: 'fa-solid fa-money-bill-wave', group: 'Financials' },
+  { label: 'My Profile', to: '/owner/profile', icon: 'fa-solid fa-user', group: 'Account' },
 ]
 
 const groups = computed(() => [...new Set(nav.map(item => item.group))])

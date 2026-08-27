@@ -72,7 +72,7 @@ async function doRegister() {
           type="text"
           class="sk-form-input"
           autocomplete="name"
-          placeholder="John Doe"
+          placeholder="Your full name"
         />
         <small v-if="fieldError('name')" class="sk-form-error">{{ fieldError('name') }}</small>
       </div>

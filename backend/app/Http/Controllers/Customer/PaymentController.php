@@ -18,7 +18,7 @@ class PaymentController extends Controller
 
         $payments = $request->user()
             ->payments()
-            ->with('contract')
+            ->with('contract.unit.building.property')
             ->latest('due_date')
             ->get();
 
@@ -28,7 +28,7 @@ class PaymentController extends Controller
     /** GET /api/payments/{payment}  — view payment details */
     public function show(Request $request, Payment $payment): JsonResponse
     {
-        $payment->load('contract');
+        $payment->load('contract.unit.building.property');
 
         Gate::authorize('view', $payment);
 
