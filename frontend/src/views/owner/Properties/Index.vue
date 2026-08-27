@@ -1,50 +1,49 @@
 <script setup>
-import { RouterLink } from 'vue-router'
-
-const placeholderProperties = [
-  { id: 1, name: 'Ocean View Villa', location: 'Alexandria', units: 5, status: 'Active' },
-  { id: 2, name: 'Downtown Penthouse', location: 'Cairo', units: 1, status: 'Active' },
-]
+import { ref, computed } from 'vue'; import { RouterLink } from 'vue-router'; import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'; import StatusBadge from '../../../components/owner/StatusBadge.vue'
+const q = ref(''); const props = [{ id: 1, name: 'Ocean View Villa', location: 'Alexandria', units: 5, type: 'Villa', status: 'Active' }, { id: 2, name: 'Downtown Penthouse', location: 'Cairo', units: 1, type: 'Penthouse', status: 'Active' }, { id: 3, name: 'Palm Residence', location: 'New Cairo', units: 12, type: 'Residential', status: 'Active' }]; const filtered = computed(() => props.filter(p => (p.name + p.location).toLowerCase().includes(q.value.toLowerCase())))
 </script>
-
 <template>
-  <div>
-    <div class="sk-toolbar">
-      <div class="sk-header" style="border: none; padding: 0; margin: 0;">
-        <h1 style="margin-bottom: 0;">Properties</h1>
-      </div>
-      <RouterLink to="/owner/properties/create" class="sk-btn sk-btn-primary">+ Add Property</RouterLink>
+    <OwnerPageHeader title="Properties" subtitle="Manage your portfolio, listings and property information."
+        action-text="Add Property" action-to="/owner/properties/create" />
+    <div class="owner-card">
+        <div class="owner-card-head">
+            <div class="owner-search-row"><input v-model="q" class="owner-search"
+                    placeholder="Search properties..." /><select class="owner-select">
+                    <option>All statuses</option>
+                    <option>Active</option>
+                    <option>Archived</option>
+                </select></div><span>{{ filtered.length }} properties</span>
+        </div>
+        <div class="owner-table-wrap">
+            <table class="owner-table">
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Location</th>
+                        <th>Type</th>
+                        <th>Units</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="p in filtered" :key="p.id">
+                        <td><strong>{{ p.name }}</strong></td>
+                        <td>{{ p.location }}</td>
+                        <td>{{ p.type }}</td>
+                        <td>{{ p.units }}</td>
+                        <td>
+                            <StatusBadge :status="p.status" />
+                        </td>
+                        <td>
+                            <RouterLink :to="`/owner/properties/${p.id}`" class="owner-btn owner-btn-light">View
+                            </RouterLink>
+                            <RouterLink :to="`/owner/properties/${p.id}/edit`" class="owner-btn owner-btn-light">Edit
+                            </RouterLink>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-
-    <!-- Table -->
-    <div class="sk-table-wrap">
-      <table class="sk-table">
-        <thead>
-          <tr>
-            <th>Property Name</th>
-            <th>Location</th>
-            <th>Units</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="prop in placeholderProperties" :key="prop.id">
-            <td><strong>{{ prop.name }}</strong></td>
-            <td>{{ prop.location }}</td>
-            <td>{{ prop.units }}</td>
-            <td>
-              <span class="sk-badge sk-badge-active">{{ prop.status }}</span>
-            </td>
-            <td>
-              <div style="display: flex; gap: 0.25rem;">
-                <RouterLink :to="`/owner/properties/${prop.id}/edit`" class="sk-btn sk-btn-secondary">Edit</RouterLink>
-                <button class="sk-btn sk-btn-danger">Delete</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 </template>

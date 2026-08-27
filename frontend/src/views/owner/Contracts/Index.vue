@@ -1,18 +1,16 @@
 <script setup>
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { onMounted, computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
+import StatusBadge from '../../../components/owner/StatusBadge.vue'
 import { useContractsStore } from '../../../stores/contracts'
 
-const router = useRouter()
 const contractsStore = useContractsStore()
+const search = ref('')
 
 onMounted(() => {
   contractsStore.fetchOwnerContracts()
 })
-
-const viewContract = (id) => {
-  router.push(`/owner/contracts/${id}`)
-}
 
 const formatDate = (date) => {
   if (!date) return '-'
@@ -24,33 +22,64 @@ const formatDate = (date) => {
   })
 }
 
-const getStatusClass = (status) => {
-  return status === 'active'
-    ? 'sk-badge-active'
-    : 'sk-badge-rejected'
-}
+const filteredContracts = computed(() => {
+  const query = search.value.toLowerCase().trim()
+
+  if (!query) {
+    return contractsStore.contracts
+  }
+
+  return contractsStore.contracts.filter((contract) => {
+    return (
+      String(contract.id ?? '').toLowerCase().includes(query) ||
+      String(contract.customer?.name ?? '').toLowerCase().includes(query) ||
+      String(
+        contract.unit?.building?.property?.name ?? ''
+      ).toLowerCase().includes(query) ||
+      String(contract.unit?.unit_number ?? '').toLowerCase().includes(query) ||
+      String(contract.status ?? '').toLowerCase().includes(query)
+    )
+  })
+})
 </script>
 
 <template>
-  <div>
-    <div class="sk-header">
-      <h1>Contracts</h1>
-      <p>Manage signed agreements and property contracts.</p>
+  <OwnerPageHeader
+    title="Contracts"
+    subtitle="Manage signed agreements and property contracts."
+    action-text="Create Contract"
+    action-to="/owner/contracts/create"
+  />
+
+  <div class="owner-card">
+    <div class="owner-card-head">
+      <input
+        v-model="search"
+        class="owner-search"
+        placeholder="Search contracts..."
+      />
+
+      <span>
+        {{ filteredContracts.length }}
+        {{ filteredContracts.length === 1 ? 'contract' : 'contracts' }}
+      </span>
     </div>
 
-    <div v-if="contractsStore.loading">
+    <div v-if="contractsStore.loading" class="owner-table-wrap">
       <p>Loading contracts...</p>
     </div>
 
     <div
-      v-else-if="contractsStore.contracts.length === 0"
-      class="sk-table-wrap"
+      v-else-if="filteredContracts.length === 0"
+      class="owner-table-wrap"
     >
-      <p>No contracts found.</p>
+      <p>
+        {{ search ? 'No contracts match your search.' : 'No contracts found.' }}
+      </p>
     </div>
 
-    <div v-else class="sk-table-wrap">
-      <table class="sk-table">
+    <div v-else class="owner-table-wrap">
+      <table class="owner-table">
         <thead>
           <tr>
             <th>Contract ID</th>
@@ -59,13 +88,13 @@ const getStatusClass = (status) => {
             <th>Unit</th>
             <th>Date Signed</th>
             <th>Status</th>
-            <th>Action</th>
+            <th></th>
           </tr>
         </thead>
 
         <tbody>
           <tr
-            v-for="contract in contractsStore.contracts"
+            v-for="contract in filteredContracts"
             :key="contract.id"
           >
             <td>
@@ -89,21 +118,18 @@ const getStatusClass = (status) => {
             </td>
 
             <td>
-              <span
-                class="sk-badge"
-                :class="getStatusClass(contract.status)"
-              >
-                {{ contract.status }}
-              </span>
+              <StatusBadge
+                :status="contract.status"
+              />
             </td>
 
             <td>
-              <button
-                class="sk-btn sk-btn-secondary"
-                @click="viewContract(contract.id)"
+              <RouterLink
+                :to="`/owner/contracts/${contract.id}`"
+                class="owner-btn owner-btn-light"
               >
                 View
-              </button>
+              </RouterLink>
             </td>
           </tr>
         </tbody>

@@ -37,6 +37,7 @@ async function handleLogout() {
       <!-- Desktop Nav -->
       <nav class="nav-links">
         <RouterLink to="/" class="nav-link" :class="{ active: isActive('customer.home') }">Home</RouterLink>
+
         <RouterLink to="/properties" class="nav-link" :class="{ active: isActive('customer.properties.index') }">Properties</RouterLink>
         <a href="/#why-us" class="nav-link">About</a>
         <a href="/#footer" class="nav-link">Contact</a>

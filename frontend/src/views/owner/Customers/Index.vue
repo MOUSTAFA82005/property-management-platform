@@ -1,105 +1,136 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import api from "../../../services/api";
+import { ref, computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
+import StatusBadge from '../../../components/owner/StatusBadge.vue'
+import api from '../../../services/api'
 
-const router = useRouter();
+const customers = ref([])
+const loading = ref(true)
+const error = ref('')
 
-const customers = ref([]);
-const loading = ref(true);
-const error = ref("");
+const customerCount = computed(() => customers.value.length)
 
 const getCustomers = async () => {
   try {
-    loading.value = true;
-    error.value = "";
+    loading.value = true
+    error.value = ''
 
-    const response = await api.get("/owner/customers");
+    const response = await api.get('/owner/customers')
 
-    customers.value = response.data.data;
+    customers.value = response.data?.data || []
   } catch (err) {
-    console.error(err);
-    error.value = "Failed to load customers.";
+    console.error(err)
+    error.value =
+      err.response?.data?.message || 'Failed to load customers.'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
-const viewCustomer = (id) => {
-  router.push(`/owner/customers/${id}`);
-};
+const getCustomerStatus = (customer) => {
+  return customer.status
+    ? customer.status.charAt(0).toUpperCase() + customer.status.slice(1)
+    : 'Active'
+}
 
 onMounted(() => {
-  getCustomers();
-});
+  getCustomers()
+})
 </script>
 
 <template>
   <div>
-    <div class="sk-header">
-      <h1>Customers</h1>
-      <p>Manage prospective and current property buyers.</p>
-    </div>
+    <OwnerPageHeader
+      title="Customers"
+      subtitle="Manage prospective and current property buyers."
+    />
 
-    <div v-if="loading" class="sk-card">Loading customers...</div>
+    <div class="owner-card">
+      <div class="owner-card-head">
+        <input
+          class="owner-search"
+          placeholder="Search customers..."
+        />
 
-    <div v-else-if="error" class="sk-card">
-      {{ error }}
-    </div>
+        <span>
+          {{ customerCount }}
+          {{ customerCount === 1 ? 'customer' : 'customers' }}
+        </span>
+      </div>
 
-    <div v-else class="sk-table-wrap">
-      <table class="sk-table">
-        <thead>
-          <tr>
-            <th>Customer Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Purchase Requests</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      <!-- Loading -->
+      <div v-if="loading" class="owner-form">
+        <p>Loading customers...</p>
+      </div>
 
-        <tbody>
-          <tr v-for="customer in customers" :key="customer.id">
-            <td>
-              <strong>{{ customer.name }}</strong>
-            </td>
+      <!-- Error -->
+      <div v-else-if="error" class="owner-form">
+        <p>{{ error }}</p>
+      </div>
 
-            <td>{{ customer.email }}</td>
+      <!-- Customers -->
+      <div v-else class="owner-table-wrap">
+        <table class="owner-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Requests</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
 
-            <td>{{ customer.phone || "-" }}</td>
+          <tbody>
+            <tr
+              v-for="customer in customers"
+              :key="customer.id"
+            >
+              <td>
+                <strong>{{ customer.name }}</strong>
+              </td>
 
-            <td>{{ customer.purchase_requests_count }}</td>
+              <td>
+                {{ customer.email || '-' }}
+              </td>
 
-            <td>
-              <span
-                class="sk-badge"
-                :class="
-                  customer.status === 'active'
-                    ? 'sk-badge-active'
-                    : 'sk-badge-rejected'
-                "
+              <td>
+                {{ customer.phone || '-' }}
+              </td>
+
+              <td>
+                {{ customer.purchase_requests_count ?? 0 }}
+              </td>
+
+              <td>
+                <StatusBadge
+                  :status="getCustomerStatus(customer)"
+                />
+              </td>
+
+              <td>
+                <RouterLink
+                  :to="`/owner/customers/${customer.id}`"
+                  class="owner-btn owner-btn-light"
+                >
+                  View
+                </RouterLink>
+              </td>
+            </tr>
+
+            <tr v-if="customers.length === 0">
+              <td
+                colspan="6"
+                style="text-align: center"
               >
-                {{ customer.status }}
-              </span>
-            </td>
-
-            <td>
-              <button
-                class="sk-btn sk-btn-secondary"
-                @click="viewCustomer(customer.id)"
-              >
-                View
-              </button>
-            </td>
-          </tr>
-
-          <tr v-if="customers.length === 0">
-            <td colspan="6" style="text-align: center">No customers found.</td>
-          </tr>
-        </tbody>
-      </table>
+                No customers found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
