@@ -49,7 +49,7 @@ export default defineConfig({
       stderr: 'pipe',
     },
     {
-      command: `npx vite preview --mode e2e --port ${WEB_PORT} --strictPort`,
+      command: `npx vite preview --mode e2e --host 127.0.0.1 --port ${WEB_PORT} --strictPort`,
       url: WEB_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
