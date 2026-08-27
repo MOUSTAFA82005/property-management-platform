@@ -88,7 +88,7 @@ onBeforeUnmount(() => {
       </nav>
 
       <div class="owner-sidebar-bottom">
-        <button type="button" class="owner-nav-item owner-logout" @click="handleLogout">
+        <button type="button" data-testid="logout" class="owner-nav-item owner-logout" @click="handleLogout">
           <span class="owner-nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
           <span>Logout</span>
         </button>

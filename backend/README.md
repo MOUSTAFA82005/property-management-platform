@@ -77,8 +77,10 @@ database/
 
 Uses Laravel Sanctum (token-based).
 
-- `POST /api/register` — public
-- `POST /api/login` — public
+- `POST /api/auth/register` — public
+- `POST /api/auth/login` — public
+- The property catalog (`GET /api/properties`, `/api/properties/{property}`,
+  `/api/properties/{property}/units`, `/api/units/{unit}`) — public
 - All other routes require `Authorization: Bearer <token>`
 
 ## Data Ownership
@@ -92,6 +94,14 @@ Controllers must verify ownership before any read/write/delete operation.
 ## Team Notes
 
 - **Do not modify migrations.** They define the agreed database schema.
-- Each controller method has a `// TODO` block describing what to implement.
-- Models, routes, and infrastructure files are complete — implement only the controller and Vue view logic.
-- The `auth:sanctum` middleware is already applied to all protected routes in `routes/api.php`.
+- Every controller method is implemented; there are no stubs left. `php artisan route:list --path=api`
+  should always show 52 routes, all backed by real controllers.
+- `auth:sanctum` protects every route except the auth entry points and the public property catalog
+  (`GET /api/properties`, `/api/properties/{property}`, `/api/properties/{property}/units`,
+  `/api/units/{unit}`), which anonymous visitors must be able to reach.
+- Everything under `/api/owner` additionally passes through `role:owner`
+  (`App\Http\Middleware\EnsureUserHasRole`). Role separation alone is not enough: policies also
+  check that the specific record belongs to the authenticated owner, via the `ownedBy()` scope and
+  `ownerId()` resolver defined on each model.
+- Ownership and isolation are covered by the PHPUnit suite and by the Playwright specs in
+  `frontend/e2e/isolation.spec.js`. Add a regression test alongside any change to these paths.

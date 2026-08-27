@@ -238,7 +238,7 @@ onMounted(async () => {
         <h1 style="margin-bottom: 0;">Payments</h1>
         <p style="margin-top: 0.25rem;">Track incoming installments and completed payments.</p>
       </div>
-      <button class="sk-btn sk-btn-primary" @click="openAddModal">+ Add Payment</button>
+      <button class="sk-btn sk-btn-primary" data-testid="payment-add" @click="openAddModal">+ Add Payment</button>
     </div>
 
     <!-- Search -->
@@ -343,7 +343,7 @@ onMounted(async () => {
             <td>
               <div style="display: flex; gap: 0.25rem;">
                 <button class="sk-btn sk-btn-secondary" @click="openEditModal(pay)">Edit</button>
-                <button class="sk-btn sk-btn-danger" @click="openDeleteModal(pay)">Delete</button>
+                <button class="sk-btn sk-btn-danger" data-testid="payment-delete" @click="openDeleteModal(pay)">Delete</button>
               </div>
             </td>
           </tr>
@@ -411,7 +411,7 @@ onMounted(async () => {
           <!-- Contract -->
           <div class="sk-form-group">
             <label class="sk-form-label">Contract *</label>
-            <select v-model="form.contract_id" class="sk-form-select" :class="{ 'is-invalid': formErrors.contract_id || apiErrors.contract_id }">
+            <select v-model="form.contract_id" data-testid="payment-contract" class="sk-form-select" :class="{ 'is-invalid': formErrors.contract_id || apiErrors.contract_id }">
               <option value="" disabled>Select a contract</option>
               <option v-for="c in contractsStore.contracts" :key="c.id" :value="c.id">
                 CTR-{{ String(c.id).padStart(4, '0') }} — {{ c.user?.name || 'Customer #' + c.user_id }} — Unit {{ c.unit?.unit_number || c.unit_id }}
@@ -424,7 +424,7 @@ onMounted(async () => {
           <!-- Amount -->
           <div class="sk-form-group">
             <label class="sk-form-label">Amount *</label>
-            <input v-model="form.amount" type="number" step="0.01" min="0.01" class="sk-form-input" :class="{ 'is-invalid': formErrors.amount || apiErrors.amount }" placeholder="e.g. 150000" />
+            <input v-model="form.amount" data-testid="payment-amount" type="number" step="0.01" min="0.01" class="sk-form-input" :class="{ 'is-invalid': formErrors.amount || apiErrors.amount }" placeholder="e.g. 150000" />
             <div v-if="formErrors.amount" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ formErrors.amount }}</div>
             <div v-else-if="apiErrors.amount" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.amount[0] }}</div>
           </div>
@@ -432,7 +432,7 @@ onMounted(async () => {
           <!-- Due Date -->
           <div class="sk-form-group">
             <label class="sk-form-label">Due Date *</label>
-            <input v-model="form.due_date" type="date" class="sk-form-input" :class="{ 'is-invalid': formErrors.due_date || apiErrors.due_date }" />
+            <input v-model="form.due_date" data-testid="payment-due-date" type="date" class="sk-form-input" :class="{ 'is-invalid': formErrors.due_date || apiErrors.due_date }" />
             <div v-if="formErrors.due_date" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ formErrors.due_date }}</div>
             <div v-else-if="apiErrors.due_date" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.due_date[0] }}</div>
           </div>
@@ -460,7 +460,7 @@ onMounted(async () => {
           <!-- Status -->
           <div class="sk-form-group">
             <label class="sk-form-label">Status *</label>
-            <select v-model="form.status" class="sk-form-select" :class="{ 'is-invalid': formErrors.status || apiErrors.status }">
+            <select v-model="form.status" data-testid="payment-status" class="sk-form-select" :class="{ 'is-invalid': formErrors.status || apiErrors.status }">
               <option value="pending">Pending</option>
               <option value="paid">Paid</option>
               <option value="overdue">Overdue</option>
@@ -473,7 +473,7 @@ onMounted(async () => {
           <!-- Reference -->
           <div class="sk-form-group">
             <label class="sk-form-label">Reference</label>
-            <input v-model="form.reference" type="text" class="sk-form-input" :class="{ 'is-invalid': apiErrors.reference }" placeholder="e.g. REF-001" />
+            <input v-model="form.reference" data-testid="payment-reference" type="text" class="sk-form-input" :class="{ 'is-invalid': apiErrors.reference }" placeholder="e.g. REF-001" />
             <div v-if="apiErrors.reference" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.reference[0] }}</div>
           </div>
 
@@ -485,7 +485,7 @@ onMounted(async () => {
 
           <!-- Actions -->
           <div class="sk-form-actions" style="padding-top: 0.5rem;">
-            <button type="submit" class="sk-btn sk-btn-primary" :disabled="submitting">
+            <button type="submit" data-testid="payment-submit" class="sk-btn sk-btn-primary" :disabled="submitting">
               {{ submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Payment' : 'Create Payment') }}
             </button>
             <button type="button" class="sk-btn sk-btn-secondary" @click="closeFormModal" :disabled="submitting">Cancel</button>
@@ -513,7 +513,7 @@ onMounted(async () => {
 
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
           <button class="sk-btn sk-btn-secondary" @click="closeDeleteModal" :disabled="submitting">Cancel</button>
-          <button class="sk-btn sk-btn-danger" @click="confirmDelete" :disabled="submitting">
+          <button class="sk-btn sk-btn-danger" data-testid="payment-delete-confirm" @click="confirmDelete" :disabled="submitting">
             {{ submitting ? 'Deleting...' : 'Delete' }}
           </button>
         </div>

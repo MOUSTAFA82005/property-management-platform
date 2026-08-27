@@ -60,7 +60,7 @@ async function handleLogout() {
           <RouterLink to="/register" class="btn-ghost btn-ghost-primary">Register</RouterLink>
         </template>
         <template v-else>
-          <button class="btn-ghost btn-logout" @click="handleLogout">Logout</button>
+          <button class="btn-ghost btn-logout" data-testid="logout" @click="handleLogout">Logout</button>
         </template>
       </div>
 

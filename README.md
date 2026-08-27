@@ -107,36 +107,126 @@ Layout: `OwnerLayout.vue`
    - Uses native inline SVGs and Inter font.
    - **CRITICAL:** Do NOT modify, redesign, or refactor the Home page unless explicitly requested.
 
-2. **All Other Pages are Functional Skeletons / Wireframes:**
-   - Intentionally designed as simple, clean UI placeholders (`style-skeleton.css`).
-   - Built so team members can easily plug in backend API integration, Pinia stores, and final feature components without altering layout routes.
+2. **All Pages Consume the Real API:**
+   - Every view reads from the Laravel API through the single Axios client in `src/services/api.js`.
+   - There is no mock business data anywhere in `src/`. If a screen needs data, it needs an endpoint.
+   - The plain styling of the non-home pages comes from `style-skeleton.css` and is intentional.
 
-3. **Customer Navbar Rule:**
-   - Public navbar contains: `Home`, `Properties`, `About`, `Contact`, `Account` (`/profile`), `Login`, `Register`.
-   - Private customer features (`Requests`, `Contracts`, `Payments`) live exclusively INSIDE the `Account Dashboard` (`/profile`) sidebar.
-
-4. **Decoupled Development Rule:**
-   - Frontend mock data is local only.
-   - Do NOT modify Laravel backend code, routes, controllers, or database migrations when building frontend skeletons.
+4. **Two Roles Only:**
+   - `owner` and `customer`. There is no admin, tenant or property_manager role.
+   - Unit statuses are `available`, `occupied`, `reserved`. There is no `sold`.
+   - Owners may only ever read or write records belonging to properties they own; this is
+     enforced by policies and query scoping in the API, not by the SPA.
 
 ---
 
-## 🚀 How to Run the Project
+## 🚀 Running PropSpace Locally
 
-### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-*App opens at `http://localhost:5173`.*
+### 1. Backend (Laravel API on :8000)
 
-### Backend Setup (Laravel API)
 ```bash
 cd backend
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
+# Point DB_* at your MySQL database, then:
+php artisan migrate:fresh --seed
 php artisan serve
 ```
+
+### 2. Frontend (Vue SPA on :5173)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The SPA calls `http://127.0.0.1:8000/api` by default. Override with `VITE_API_BASE_URL`.
+
+---
+
+## 🔑 Demo Credentials
+
+`php artisan migrate:fresh --seed` creates a complete scenario. **Every account uses the
+password `password`.**
+
+| Role | Email | Notes |
+| --- | --- | --- |
+| Owner | `owner@propspace.com` | Hassan Farouk — Nile View, Palm Gardens |
+| Owner | `owner2@propspace.com` | Nadia Mansour — Alexandria Marina |
+| Customer | `customer@propspace.com` | Omar Sabry — deals with both owners |
+| Customer | `customer2@propspace.com` | Salma Adel — Hassan only |
+| Customer | `customer3@propspace.com` | Youssef Ibrahim — Nadia only |
+| Customer | `customer4@propspace.com` | Dina Hafez — Hassan only |
+| Customer | `customer5@propspace.com` | Karim Nassar — deals with both owners |
+
+The relationships are deliberately asymmetric so ownership isolation is testable: an endpoint
+that leaks shows it immediately.
+
+Seeded volume: 3 properties, 5 buildings, 12 units (available/occupied/reserved), 5 contracts,
+20 payments (paid/pending/overdue/cancelled) and 7 purchase requests.
+
+---
+
+## ✅ Tests
+
+### Backend
+
+```bash
+cd backend
+php artisan test
+```
+
+Runs against in-memory SQLite (configured in `phpunit.xml`) — it never touches your MySQL
+database.
+
+### Frontend build
+
+```bash
+cd frontend
+npm run build
+```
+
+### End-to-end (Playwright)
+
+```bash
+cd frontend
+npm install
+npx playwright install chromium   # first run only
+npm run e2e
+```
+
+`npm run e2e` builds the SPA in `e2e` mode, then Playwright starts both servers itself:
+
+- the API on **:8001** using `backend/.env.e2e`
+- the SPA on **:4173**
+
+**Your normal database is never touched.** `backend/.env.e2e` points at a throwaway
+`backend/database/e2e.sqlite`, which is rebuilt from `DemoDataSeeder` before every spec file.
+Ports 8001/4173 are used so a running `php artisan serve` / `npm run dev` won't collide.
+
+Useful variants:
+
+```bash
+npm run e2e:ui        # interactive runner
+npm run e2e:report    # open the last HTML report
+npx playwright test e2e/isolation.spec.js   # one file
+```
+
+---
+
+## 🤖 CI
+
+`.github/workflows/ci.yml` runs on every push and pull request, in three jobs:
+
+| Job | What it does |
+| --- | --- |
+| `backend` | `composer install`, `migrate:fresh --seed`, `php artisan test` |
+| `frontend` | `npm ci`, `npm run build` |
+| `e2e` | installs both stacks + Chromium, then `npm run e2e` |
+
+CI uses SQLite rather than MySQL: nothing under test depends on MySQL-specific behaviour, and
+the one query with a vendor-specific branch (the dashboard's monthly revenue aggregate) has a
+SQLite path. Composer, npm and Playwright browsers are cached. When E2E fails, the HTML report
+and failure traces are uploaded as artifacts.

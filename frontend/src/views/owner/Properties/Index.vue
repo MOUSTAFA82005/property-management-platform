@@ -33,9 +33,15 @@ async function togglePublished(property) {
   busyId.value = property.id
   feedback.value = ''
   actionError.value = ''
+
+  // Work out the target state up front. Reading property.is_published after
+  // the call reports the old value — the store swaps in a fresh record, so
+  // this local reference still points at the pre-update object.
+  const shouldPublish = !property.is_published
+
   try {
-    await store.setPublished(property.id, !property.is_published)
-    feedback.value = `${property.name} is now ${property.is_published ? 'published' : 'unpublished'}.`
+    await store.setPublished(property.id, shouldPublish)
+    feedback.value = `${property.name} is now ${shouldPublish ? 'published' : 'unpublished'}.`
   } catch (e) {
     actionError.value = e.response?.data?.message || 'Could not change the publication status.'
   } finally {
