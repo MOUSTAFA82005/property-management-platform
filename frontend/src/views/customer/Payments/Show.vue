@@ -287,11 +287,6 @@ function statusBadge(status) {
   border-radius: 10px;
 }
 
-.empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-}
-
 .empty-box h3 {
   font-size: 1.15rem;
   font-weight: 700;

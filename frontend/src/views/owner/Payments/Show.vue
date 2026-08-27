@@ -26,7 +26,7 @@ function statusBadgeClass(status) {
   const map = {
     pending: 'sk-badge-pending',
     paid: 'sk-badge-paid',
-    overdue: 'sk-badge-sold',
+    overdue: 'sk-badge-overdue',
     cancelled: 'sk-badge-rejected',
   }
   return map[status] || 'sk-badge-pending'

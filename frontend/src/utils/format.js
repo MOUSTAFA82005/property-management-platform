@@ -38,14 +38,14 @@ export function humanStatus(status) {
 export function statusBadgeClass(status) {
   const map = {
     available: 'sk-badge-available',
-    occupied: 'sk-badge-sold',
+    occupied: 'sk-badge-occupied',
     reserved: 'sk-badge-pending',
     active: 'sk-badge-active',
     expired: 'sk-badge-rejected',
     terminated: 'sk-badge-rejected',
     paid: 'sk-badge-paid',
     pending: 'sk-badge-pending',
-    overdue: 'sk-badge-sold',
+    overdue: 'sk-badge-overdue',
     cancelled: 'sk-badge-rejected',
     approved: 'sk-badge-active',
     rejected: 'sk-badge-rejected',

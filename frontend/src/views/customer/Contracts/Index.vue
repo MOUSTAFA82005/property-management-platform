@@ -159,24 +159,6 @@ const expiredCount   = computed(() => contractsStore.contracts.filter((c) => ['e
 .stat-card-amber .stat-value { color: #d97706; }
 .stat-card-red   .stat-value { color: #dc2626; }
 
-.empty-box {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-}
-
-.empty-box-error {
-  background: #fef2f2;
-  border-color: #fecaca;
-}
-
-.empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-}
-
 .empty-box h3 {
   font-size: 1.1rem;
   font-weight: 700;
