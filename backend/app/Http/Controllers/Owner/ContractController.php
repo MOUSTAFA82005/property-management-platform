@@ -18,16 +18,15 @@ class ContractController extends Controller
     {
         Gate::authorize('viewAny', Contract::class);
 
-        $contracts = Contract::with([
-            'user',
-            'unit.building.property',
-            'payments',
-        ])
-            ->whereHas('unit.building.property', function ($query) use ($request) {
-                $query->where('owner_id', $request->user()->id);
-            })
+        $contracts = Contract::query()
+            ->ownedBy($request->user())
+            ->with([
+                'user',
+                'unit.building.property',
+                'payments',
+            ])
             ->latest()
-            ->paginate($request->input('per_page', 15));
+            ->paginate($request->integer('per_page', 15));
 
         return ContractResource::collection($contracts)->response();
     }
@@ -89,13 +88,9 @@ class ContractController extends Controller
     }
 
     /** GET /api/owner/contracts/{contract} */
-    public function show(
-        Request $request,
-        Contract $contract
-    ): JsonResponse {
+    public function show(Contract $contract): JsonResponse
+    {
         Gate::authorize('view', $contract);
-
-        $this->authorizeOwner($request, $contract);
 
         $contract->load([
             'user',
@@ -112,8 +107,6 @@ class ContractController extends Controller
         Contract $contract
     ): JsonResponse {
         Gate::authorize('update', $contract);
-
-        $this->authorizeOwner($request, $contract);
 
         $validated = $request->validate([
             'user_id'           => ['sometimes', 'integer', 'exists:users,id'],
@@ -159,13 +152,9 @@ class ContractController extends Controller
     }
 
     /** DELETE /api/owner/contracts/{contract} */
-    public function destroy(
-        Request $request,
-        Contract $contract
-    ): JsonResponse {
+    public function destroy(Contract $contract): JsonResponse
+    {
         Gate::authorize('delete', $contract);
-
-        $this->authorizeOwner($request, $contract);
 
         $unit = $contract->unit;
 
@@ -178,21 +167,5 @@ class ContractController extends Controller
         }
 
         return response()->json(null, 204);
-    }
-
-    private function authorizeOwner(
-        Request $request,
-        Contract $contract
-    ): void {
-        $contract->loadMissing('unit.building.property');
-
-        abort_unless(
-            $contract->unit &&
-            $contract->unit->building &&
-            $contract->unit->building->property &&
-            $contract->unit->building->property->owner_id === $request->user()->id,
-            403,
-            'You are not authorized to access this contract.'
-        );
     }
 }

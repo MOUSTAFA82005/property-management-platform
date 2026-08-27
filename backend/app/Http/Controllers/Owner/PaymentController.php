@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Owner\StorePaymentRequest;
 use App\Http\Requests\Owner\UpdatePaymentRequest;
 use App\Http\Resources\PaymentResource;
+use App\Models\Contract;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,9 +19,22 @@ class PaymentController extends Controller
     {
         Gate::authorize('viewAny', Payment::class);
 
-        $payments = Payment::with(['contract.user', 'contract.unit'])
+        // Previously unscoped: every owner saw every payment in the system.
+        $payments = Payment::query()
+            ->ownedBy($request->user())
+            ->with(['contract.user', 'contract.unit'])
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
+            ->when($request->filled('contract_id'), fn ($q) => $q->where('contract_id', $request->integer('contract_id')))
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $term = '%'.$request->string('search')->trim().'%';
+                $query->where(fn ($q) => $q
+                    ->where('reference', 'like', $term)
+                    ->orWhere('payment_method', 'like', $term)
+                    ->orWhereHas('contract.user', fn ($u) => $u->where('name', 'like', $term))
+                    ->orWhereHas('contract.unit', fn ($u) => $u->where('unit_number', 'like', $term)));
+            })
             ->latest('due_date')
-            ->paginate($request->input('per_page', 15));
+            ->paginate($request->integer('per_page', 15));
 
         return PaymentResource::collection($payments)->response();
     }
@@ -30,13 +44,16 @@ class PaymentController extends Controller
     {
         Gate::authorize('create', Payment::class);
 
+        $contract = Contract::findOrFail($request->validated('contract_id'));
+
+        // A payment may only be raised against a contract on your own unit.
+        Gate::authorize('update', $contract);
+
         $payment = Payment::create($request->validated());
 
         $payment->load(['contract.user', 'contract.unit']);
 
-        return (new PaymentResource($payment))
-            ->response()
-            ->setStatusCode(201);
+        return (new PaymentResource($payment))->response()->setStatusCode(201);
     }
 
     /** GET /api/owner/payments/{payment} */
@@ -53,6 +70,12 @@ class PaymentController extends Controller
     public function update(UpdatePaymentRequest $request, Payment $payment): JsonResponse
     {
         Gate::authorize('update', $payment);
+
+        // Re-pointing a payment at a different contract must not be a way to
+        // reach another owner's records.
+        if ($request->filled('contract_id')) {
+            Gate::authorize('update', Contract::findOrFail($request->validated('contract_id')));
+        }
 
         $payment->update($request->validated());
 

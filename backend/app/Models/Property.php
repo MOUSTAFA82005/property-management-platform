@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Builder;
 
 class Property extends Model
 {
@@ -47,5 +48,24 @@ class Property extends Model
             'id',
             'id'
         );
+    }
+
+    /**
+     * Restrict a query to properties belonging to one owner.
+     *
+     * Ownership of every other record in the system is derived from this
+     * relationship, so the chain is defined once per model and reused by the
+     * policies and the owner-facing controllers rather than being re-written
+     * inline wherever it happens to be needed.
+     */
+    public function scopeOwnedBy(Builder $query, User|int $owner): Builder
+    {
+        return $query->where('owner_id', $owner instanceof User ? $owner->id : $owner);
+    }
+
+    /** The id of the owner this record ultimately belongs to. */
+    public function ownerId(): ?int
+    {
+        return $this->owner_id;
     }
 }

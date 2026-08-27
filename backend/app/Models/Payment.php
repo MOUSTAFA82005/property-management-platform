@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 class Payment extends Model
 {
@@ -27,5 +29,26 @@ class Payment extends Model
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);
+    }
+
+    /** Payments belong to an owner through contract → unit → building → property. */
+    public function scopeOwnedBy(Builder $query, User|int $owner): Builder
+    {
+        return $query->whereHas(
+            'contract.unit.building.property',
+            fn (Builder $q) => $q->ownedBy($owner)
+        );
+    }
+
+    public function ownerId(): ?int
+    {
+        return $this->loadMissing('contract.unit.building.property')
+            ->contract?->unit?->building?->property?->owner_id;
+    }
+
+    /** The customer responsible for this payment. */
+    public function customerId(): ?int
+    {
+        return $this->loadMissing('contract')->contract?->user_id;
     }
 }

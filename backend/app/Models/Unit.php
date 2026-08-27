@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\Builder;
 
 class Unit extends Model
 {
@@ -74,5 +75,28 @@ class Unit extends Model
             'id',
             'id'
         );
+    }
+
+    /** Units belong to an owner through building → property. */
+    public function scopeOwnedBy(Builder $query, User|int $owner): Builder
+    {
+        return $query->whereHas(
+            'building.property',
+            fn (Builder $q) => $q->ownedBy($owner)
+        );
+    }
+
+    /** Restrict a query to units a member of the public may browse. */
+    public function scopePubliclyVisible(Builder $query): Builder
+    {
+        return $query->whereHas(
+            'building.property',
+            fn (Builder $q) => $q->where('is_published', true)->where('status', 'active')
+        );
+    }
+
+    public function ownerId(): ?int
+    {
+        return $this->loadMissing('building.property')->building?->property?->owner_id;
     }
 }

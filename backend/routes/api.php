@@ -29,6 +29,17 @@ Route::prefix('auth')->group(function () {
 });
 
 // -------------------------------------------------------
+// Public — property catalog
+// -------------------------------------------------------
+// Browsing published stock needs no account. These deliberately sit outside
+// the auth:sanctum group so an anonymous visitor can reach them, and the
+// controllers restrict every query to published, active properties.
+Route::get('/properties', [CustomerPropertyController::class, 'index']);
+Route::get('/properties/{property}', [CustomerPropertyController::class, 'show']);
+Route::get('/properties/{property}/units', [CustomerUnitController::class, 'index']);
+Route::get('/units/{unit}', [CustomerUnitController::class, 'show']);
+
+// -------------------------------------------------------
 // Protected — shared auth
 // -------------------------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
@@ -66,12 +77,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---------------------------------------------------
     // Customer routes
     // ---------------------------------------------------
-    Route::get('/properties', [CustomerPropertyController::class, 'index']);
-    Route::get('/properties/{property}', [CustomerPropertyController::class, 'show']);
-
-    Route::get('/properties/{property}/units', [CustomerUnitController::class, 'index']);
-    Route::get('/units/{unit}', [CustomerUnitController::class, 'show']);
-
     // apiResource would generate the parameter {purchase_request}, which does not
     // match the $purchaseRequest argument on the controller — implicit model
     // binding silently skips when the names differ. Pin the parameter name.
