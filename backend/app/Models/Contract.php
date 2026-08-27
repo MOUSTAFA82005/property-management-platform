@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Contract extends Model
 {
     protected $fillable = [
-        'customer_id',
+        'user_id',
         'unit_id',
         'start_date',
         'end_date',
@@ -26,9 +26,9 @@ class Contract extends Model
         'security_deposit' => 'decimal:2',
     ];
 
-    public function customer(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'customer_id');
+        return $this->belongsTo(User::class);
     }
 
     public function unit(): BelongsTo

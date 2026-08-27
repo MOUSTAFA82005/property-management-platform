@@ -267,7 +267,7 @@ import { RouterLink } from 'vue-router'
 <style scoped>
 .hero-section {
   position: relative;
-  min-height: 100vh;
+  min-height: calc(100vh - 68px);
   display: flex;
   align-items: center;
   padding-top: 68px;
@@ -304,10 +304,10 @@ import { RouterLink } from 'vue-router'
   z-index: 1;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 4rem 1.5rem;
+  padding: 3rem 1.5rem 4rem;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  gap: 3.5rem;
   align-items: center;
 }
 

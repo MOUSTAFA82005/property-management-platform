@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 // -------------------------------------------------------
 Route::prefix('auth')->group(function () {
     Route::post('/register', RegisterController::class);
-    Route::post('/login',    LoginController::class);
+    Route::post('/login', LoginController::class);
 });
 
 // -------------------------------------------------------
@@ -34,7 +34,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/auth/logout', LogoutController::class);
-    Route::get('/auth/me',      MeController::class);
+    Route::get('/auth/me', MeController::class);
 
     // ---------------------------------------------------
     // Owner routes
@@ -44,41 +44,41 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', OwnerDashboardController::class);
 
         Route::apiResource('/properties', OwnerPropertyController::class);
-        Route::post('/properties/{property}/publish',   [OwnerPropertyController::class, 'publish']);
+        Route::post('/properties/{property}/publish', [OwnerPropertyController::class, 'publish']);
         Route::post('/properties/{property}/unpublish', [OwnerPropertyController::class, 'unpublish']);
 
-        Route::apiResource('/buildings',        OwnerBuildingController::class);
-        Route::apiResource('/units',            OwnerUnitController::class);
-        Route::apiResource('/contracts',        OwnerContractController::class);
-        Route::apiResource('/payments',         OwnerPaymentController::class);
+        Route::apiResource('/buildings', OwnerBuildingController::class);
+        Route::apiResource('/units', OwnerUnitController::class);
+        Route::apiResource('/contracts', OwnerContractController::class);
+        Route::apiResource('/payments', OwnerPaymentController::class);
 
-        Route::get('/customers',        [CustomerController::class, 'index']);
+        Route::get('/customers', [CustomerController::class, 'index']);
         Route::get('/customers/{customer}', [CustomerController::class, 'show']);
 
-        Route::get('/purchase-requests',                            [OwnerPurchaseRequestController::class, 'index']);
-        Route::get('/purchase-requests/{purchaseRequest}',          [OwnerPurchaseRequestController::class, 'show']);
+        Route::get('/purchase-requests', [OwnerPurchaseRequestController::class, 'index']);
+        Route::get('/purchase-requests/{purchaseRequest}', [OwnerPurchaseRequestController::class, 'show']);
         Route::post('/purchase-requests/{purchaseRequest}/approve', [OwnerPurchaseRequestController::class, 'approve']);
-        Route::post('/purchase-requests/{purchaseRequest}/reject',  [OwnerPurchaseRequestController::class, 'reject']);
+        Route::post('/purchase-requests/{purchaseRequest}/reject', [OwnerPurchaseRequestController::class, 'reject']);
     });
 
     // ---------------------------------------------------
     // Customer routes
     // ---------------------------------------------------
-    Route::get('/properties',              [CustomerPropertyController::class, 'index']);
-    Route::get('/properties/{property}',   [CustomerPropertyController::class, 'show']);
+    Route::get('/properties', [CustomerPropertyController::class, 'index']);
+    Route::get('/properties/{property}', [CustomerPropertyController::class, 'show']);
 
     Route::get('/properties/{property}/units', [CustomerUnitController::class, 'index']);
-    Route::get('/units/{unit}',                [CustomerUnitController::class, 'show']);
+    Route::get('/units/{unit}', [CustomerUnitController::class, 'show']);
 
     Route::apiResource('/purchase-requests', CustomerPurchaseRequestController::class)
         ->only(['index', 'store', 'show', 'destroy']);
 
-    Route::get('/contracts',             [CustomerContractController::class, 'index']);
-    Route::get('/contracts/{contract}',  [CustomerContractController::class, 'show']);
+    Route::get('/contracts', [CustomerContractController::class, 'index']);
+    Route::get('/contracts/{contract}', [CustomerContractController::class, 'show']);
 
-    Route::get('/payments',              [CustomerPaymentController::class, 'index']);
-    Route::get('/payments/{payment}',    [CustomerPaymentController::class, 'show']);
+    Route::get('/payments', [CustomerPaymentController::class, 'index']);
+    Route::get('/payments/{payment}', [CustomerPaymentController::class, 'show']);
 
-    Route::get('/profile',  [ProfileController::class, 'show']);
-    Route::put('/profile',  [ProfileController::class, 'update']);
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
 });

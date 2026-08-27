@@ -16,11 +16,12 @@ const routes = [
   },
 
   // -------------------------------------------------------
-  // Owner area
+  // Owner area  (requires auth + owner role)
   // -------------------------------------------------------
   {
     path: '/owner',
     component: () => import('../layouts/OwnerLayout.vue'),
+    meta: { requiresAuth: true, requiresOwner: true },
     children: [
       { path: '',          redirect: '/owner/dashboard' },
       {
@@ -129,77 +130,79 @@ const routes = [
   },
 
   // -------------------------------------------------------
-  // Customer area
+  // Customer / Public area
   // -------------------------------------------------------
   {
     path: '/',
     component: () => import('../layouts/CustomerLayout.vue'),
     children: [
+      // Public routes — no auth required
       {
         path: '',
         name: 'customer.home',
+        meta: { public: true },
         component: () => import('../views/customer/Home.vue'),
       },
-
-      // Properties
       {
         path: 'properties',
         name: 'customer.properties.index',
+        meta: { public: true },
         component: () => import('../views/customer/Properties/Index.vue'),
       },
       {
         path: 'properties/:id',
         name: 'customer.properties.show',
+        meta: { public: true },
         component: () => import('../views/customer/Properties/Show.vue'),
       },
-
-      // Units
       {
         path: 'units/:id',
         name: 'customer.units.show',
+        meta: { public: true },
         component: () => import('../views/customer/Units/Show.vue'),
       },
 
-      // Purchase Requests
+      // Private customer-only routes — require auth AND customer role
       {
         path: 'purchase-requests',
         name: 'customer.purchase-requests.index',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/PurchaseRequests/Index.vue'),
       },
       {
         path: 'purchase-requests/:id',
         name: 'customer.purchase-requests.show',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/PurchaseRequests/Show.vue'),
       },
-
-      // Contracts
       {
         path: 'contracts',
         name: 'customer.contracts.index',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Contracts/Index.vue'),
       },
       {
         path: 'contracts/:id',
         name: 'customer.contracts.show',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Contracts/Show.vue'),
       },
-
-      // Payments
       {
         path: 'payments',
         name: 'customer.payments.index',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Payments/Index.vue'),
       },
       {
         path: 'payments/:id',
         name: 'customer.payments.show',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Payments/Show.vue'),
       },
-
-      // Profile
       {
         path: 'profile',
         name: 'customer.profile',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Profile.vue'),
       },
     ],
@@ -214,9 +217,42 @@ const router = createRouter({
   routes,
 })
 
-// TODO: Implement route guards
-// - Unauthenticated users accessing protected routes → redirect to /login
-// - Authenticated owners accessing customer routes → redirect to /owner/dashboard
-// - Authenticated customers accessing owner routes → redirect to /
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+  const user  = JSON.parse(localStorage.getItem('user') || 'null')
+
+  const isAuthPage       = to.name === 'login' || to.name === 'register'
+  const isPublic         = to.meta?.public === true
+  const requiresAuth     = to.meta?.requiresAuth === true
+  const requiresOwner    = to.meta?.requiresOwner === true
+  const requiresCustomer = to.meta?.requiresCustomer === true
+
+  // Authenticated users should not see login/register
+  if (token && isAuthPage) {
+    return next({ path: '/' })
+  }
+
+  // Public routes and auth pages are always accessible
+  if (isPublic || isAuthPage) {
+    return next()
+  }
+
+  // Any protected route without a token → login
+  if ((requiresAuth || requiresCustomer) && !token) {
+    return next({ name: 'login' })
+  }
+
+  // Owner-only routes: non-owners get redirected home
+  if (requiresOwner && user?.role !== 'owner') {
+    return next({ path: '/' })
+  }
+
+  // Customer-only routes: owners are redirected to their portal, never into the customer flow
+  if (requiresCustomer && user?.role !== 'customer') {
+    return next({ path: '/owner/dashboard' })
+  }
+
+  next()
+})
 
 export default router
