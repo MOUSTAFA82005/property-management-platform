@@ -1,7 +1,7 @@
 <script setup>
-// TODO: POST /api/owner/contracts
+import ContractForm from './ContractForm.vue'
 </script>
 
 <template>
-  <div><!-- TODO: Create contract form --></div>
+  <ContractForm mode="create" />
 </template>

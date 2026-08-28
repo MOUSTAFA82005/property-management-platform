@@ -66,7 +66,7 @@ const steps = [
 <style scoped>
 .how-section {
   padding: 5rem 1.5rem;
-  background: linear-gradient(160deg, #1a1a2e 0%, #2d1b69 50%, #1a1a2e 100%);
+  background: linear-gradient(160deg, #14141F 0%, #2A1A6E 50%, #14141F 100%);
   position: relative;
   overflow: hidden;
 }
@@ -77,7 +77,7 @@ const steps = [
   width: 400px;
   height: 400px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(134, 76, 255, 0.2), transparent);
+  background: radial-gradient(circle, rgba(91, 63, 224, 0.2), transparent);
   top: -100px;
   right: -100px;
   pointer-events: none;
@@ -110,15 +110,15 @@ const steps = [
 .section-tag {
   display: inline-block;
   padding: 0.3rem 1rem;
-  background: rgba(134, 76, 255, 0.25);
-  color: #c4a0ff;
+  background: rgba(91, 63, 224, 0.25);
+  color: #BEADFA;
   font-size: 0.78rem;
   font-weight: 700;
   border-radius: 100px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 0.85rem;
-  border: 1px solid rgba(134, 76, 255, 0.3);
+  border: 1px solid rgba(91, 63, 224, 0.3);
 }
 
 .section-title {
@@ -159,7 +159,7 @@ const steps = [
 .step-item:hover {
   background: rgba(255, 255, 255, 0.09);
   transform: translateY(-6px);
-  border-color: rgba(134, 76, 255, 0.4);
+  border-color: rgba(91, 63, 224, 0.4);
 }
 
 /* Connector line */
@@ -182,8 +182,8 @@ const steps = [
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #864CFF, #6B2FFF);
-  box-shadow: 0 4px 16px rgba(134, 76, 255, 0.4);
+  background: linear-gradient(135deg, #5B3FE0, #3D279E);
+  box-shadow: 0 4px 16px rgba(91, 63, 224, 0.4);
 }
 
 .step-num {
@@ -201,12 +201,12 @@ const steps = [
   height: 64px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.08);
-  color: #c4a0ff;
+  color: #BEADFA;
   transition: background 0.2s, color 0.2s;
 }
 
 .step-item:hover .step-icon-wrap {
-  background: rgba(134, 76, 255, 0.2);
+  background: rgba(91, 63, 224, 0.2);
   color: #fff;
 }
 

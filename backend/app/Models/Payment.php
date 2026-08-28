@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 class Payment extends Model
 {
     protected $fillable = [
         'contract_id',
-        'customer_id',
-        'unit_id',
         'amount',
         'due_date',
         'paid_date',
@@ -21,9 +21,9 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'amount'   => 'decimal:2',
-        'due_date' => 'date',
-        'paid_date'=> 'date',
+        'amount'    => 'decimal:2',
+        'due_date'  => 'date',
+        'paid_date' => 'date',
     ];
 
     public function contract(): BelongsTo
@@ -31,13 +31,24 @@ class Payment extends Model
         return $this->belongsTo(Contract::class);
     }
 
-    public function customer(): BelongsTo
+    /** Payments belong to an owner through contract → unit → building → property. */
+    public function scopeOwnedBy(Builder $query, User|int $owner): Builder
     {
-        return $this->belongsTo(User::class, 'customer_id');
+        return $query->whereHas(
+            'contract.unit.building.property',
+            fn (Builder $q) => $q->ownedBy($owner)
+        );
     }
 
-    public function unit(): BelongsTo
+    public function ownerId(): ?int
     {
-        return $this->belongsTo(Unit::class);
+        return $this->loadMissing('contract.unit.building.property')
+            ->contract?->unit?->building?->property?->owner_id;
+    }
+
+    /** The customer responsible for this payment. */
+    public function customerId(): ?int
+    {
+        return $this->loadMissing('contract')->contract?->user_id;
     }
 }

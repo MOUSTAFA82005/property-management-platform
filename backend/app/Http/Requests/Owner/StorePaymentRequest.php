@@ -14,7 +14,14 @@ class StorePaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // TODO: Define validation rules for creating a payment
+            'contract_id'     => ['required', 'integer', 'exists:contracts,id'],
+            'amount'          => ['required', 'numeric', 'gt:0'],
+            'due_date'        => ['required', 'date'],
+            'paid_date'       => ['nullable', 'date'],
+            'payment_method'  => ['nullable', 'string', 'max:255'],
+            'status'          => ['required', 'in:pending,paid,overdue,cancelled'],
+            'reference'       => ['nullable', 'string', 'max:255', 'unique:payments,reference'],
+            'notes'           => ['nullable', 'string'],
         ];
     }
 }

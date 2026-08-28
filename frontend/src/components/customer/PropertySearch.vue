@@ -1,84 +1,79 @@
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const search = () => {
-  router.push('/properties')
+/**
+ * A real search: both fields are carried into the catalog as query
+ * parameters, and the property types are the ones the API actually stores.
+ */
+const query = ref('')
+const propertyType = ref('')
+
+function search() {
+  const params = {}
+  if (query.value.trim()) params.search = query.value.trim()
+  if (propertyType.value) params.property_type = propertyType.value
+
+  router.push({ path: '/properties', query: params })
 }
 </script>
 
 <template>
-  <section class="search-section">
+  <section class="search-section" aria-labelledby="search-panel-title">
     <div class="search-container">
-      <div class="search-panel">
-        <div class="search-panel-header">
-          <span class="search-panel-icon">🔍</span>
-          <span>Find Your Perfect Property</span>
+      <form class="search-panel" @submit.prevent="search">
+        <div class="search-panel-header" id="search-panel-title">
+          <span class="search-panel-icon" aria-hidden="true">🔍</span>
+          <span>Find a property</span>
         </div>
 
         <div class="search-fields">
           <div class="search-field">
-            <label class="field-label">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <label class="field-label" for="home-search-query">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" stroke-width="2"/>
                 <circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="2"/>
               </svg>
-              Location
+              Name, city or address
             </label>
             <div class="field-input-wrap">
-              <input type="text" class="field-input" placeholder="Search location…" />
+              <input
+                id="home-search-query"
+                v-model="query"
+                type="search"
+                class="field-input"
+                placeholder="e.g. Cairo"
+              />
             </div>
           </div>
 
           <div class="search-field">
-            <label class="field-label">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <label class="field-label" for="home-search-type">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
               </svg>
-              Property Type
+              Property type
             </label>
             <div class="field-input-wrap">
-              <select class="field-input">
-                <option value="">All Types</option>
-                <option value="apartment">Apartment</option>
-                <option value="villa">Villa</option>
-                <option value="townhouse">Townhouse</option>
-                <option value="commercial">Commercial</option>
-                <option value="studio">Studio</option>
+              <select id="home-search-type" v-model="propertyType" class="field-input">
+                <option value="">All types</option>
+                <option value="Apartment Building">Apartment Building</option>
+                <option value="Residential Compound">Residential Compound</option>
               </select>
             </div>
           </div>
 
-          <div class="search-field">
-            <label class="field-label">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              Price Range
-            </label>
-            <div class="field-input-wrap">
-              <select class="field-input">
-                <option value="">Any Price</option>
-                <option value="0-1000000">Up to EGP 1,000,000</option>
-                <option value="1000000-2500000">EGP 1M – 2.5M</option>
-                <option value="2500000-5000000">EGP 2.5M – 5M</option>
-                <option value="5000000-10000000">EGP 5M – 10M</option>
-                <option value="10000000+">EGP 10M+</option>
-              </select>
-            </div>
-          </div>
-
-          <button class="search-btn" @click="search">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <button class="search-btn" type="submit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
               <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
             Search Properties
           </button>
         </div>
-      </div>
+      </form>
     </div>
   </section>
 </template>
@@ -99,8 +94,8 @@ const search = () => {
 .search-panel {
   background: #fff;
   border-radius: 20px;
-  box-shadow: 0 16px 60px rgba(26, 26, 62, 0.12), 0 4px 16px rgba(134, 76, 255, 0.08);
-  border: 1px solid rgba(134, 76, 255, 0.08);
+  box-shadow: 0 16px 60px rgba(26, 26, 62, 0.12), 0 4px 16px rgba(91, 63, 224, 0.08);
+  border: 1px solid rgba(91, 63, 224, 0.08);
   padding: 1.5rem 2rem;
 }
 
@@ -110,7 +105,7 @@ const search = () => {
   gap: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #864CFF;
+  color: #5B3FE0;
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #f1f5f9;
@@ -122,7 +117,7 @@ const search = () => {
 
 .search-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) auto;
   gap: 1rem;
   align-items: end;
 }
@@ -154,7 +149,7 @@ const search = () => {
   border: 1.5px solid #e2e8f0;
   border-radius: 10px;
   font-size: 0.925rem;
-  color: #1a1a2e;
+  color: #14141F;
   background: #f8fafc;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
@@ -171,9 +166,9 @@ select.field-input {
 }
 
 .field-input:focus {
-  border-color: #864CFF;
+  border-color: #5B3FE0;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(134, 76, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(91, 63, 224, 0.1);
 }
 
 .field-input::placeholder {
@@ -186,7 +181,7 @@ select.field-input {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #864CFF, #6B2FFF);
+  background: linear-gradient(135deg, #5B3FE0, #3D279E);
   color: #fff;
   font-size: 0.9rem;
   font-weight: 700;
@@ -194,13 +189,13 @@ select.field-input {
   border-radius: 10px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(134, 76, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(91, 63, 224, 0.3);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .search-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(134, 76, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(91, 63, 224, 0.4);
 }
 
 .search-btn:active {

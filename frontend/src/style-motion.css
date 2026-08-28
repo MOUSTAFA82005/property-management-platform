@@ -1,0 +1,445 @@
+/* ==========================================================================
+   PropSpace motion system
+   --------------------------------------------------------------------------
+   One place for durations, easing, entrance animations and the notification
+   surface. Everything here is plain CSS — no animation library — and every
+   decorative animation is switched off under `prefers-reduced-motion` at the
+   bottom of the file.
+
+   Only `transform` and `opacity` are animated. Both are compositor-friendly,
+   so none of this triggers layout while it runs.
+   ========================================================================== */
+
+:root {
+  --dur-fast:   .15s;
+  --dur-base:   .22s;
+  --dur-slow:   .32s;
+
+  --ease-out:   cubic-bezier(.22, .68, .38, 1);
+  --ease-inout: cubic-bezier(.45, .05, .35, 1);
+}
+
+@keyframes ps-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ps-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* One nudge when an unread notification arrives — never a loop. */
+@keyframes ps-bell-nudge {
+  0%, 100% { transform: rotate(0); }
+  20%      { transform: rotate(-11deg); }
+  40%      { transform: rotate(9deg); }
+  60%      { transform: rotate(-5deg); }
+  80%      { transform: rotate(3deg); }
+}
+
+@keyframes ps-badge-in {
+  from { opacity: 0; transform: scale(.5); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Entrance utilities ──────────────────────────────────────────── */
+
+.ps-fade-up { animation: ps-fade-up var(--dur-slow) var(--ease-out) both; }
+.ps-fade-in { animation: ps-fade-in var(--dur-slow) var(--ease-out) both; }
+
+/* Stagger for small groups — dashboard tiles, card grids. Capped at eight so
+   a long list never sits behind a queue of delays. */
+.ps-stagger > * { animation: ps-fade-up var(--dur-slow) var(--ease-out) both; }
+.ps-stagger > *:nth-child(1) { animation-delay: .02s; }
+.ps-stagger > *:nth-child(2) { animation-delay: .06s; }
+.ps-stagger > *:nth-child(3) { animation-delay: .10s; }
+.ps-stagger > *:nth-child(4) { animation-delay: .14s; }
+.ps-stagger > *:nth-child(5) { animation-delay: .18s; }
+.ps-stagger > *:nth-child(6) { animation-delay: .22s; }
+.ps-stagger > *:nth-child(7) { animation-delay: .26s; }
+.ps-stagger > *:nth-child(n+8) { animation-delay: .30s; }
+
+/* ── Route transitions ───────────────────────────────────────────── */
+
+/*
+ * The route wrapper is keyed on the path, so navigating remounts it and this
+ * animation replays. Entrance only, by design: a Vue <Transition> would keep
+ * the outgoing page mounted beside the incoming one, briefly putting two
+ * pages of content in the document — bad for anything reading the page,
+ * assistive tech included.
+ */
+.ps-route { animation: ps-fade-up var(--dur-base) var(--ease-out) both; }
+
+/* ── Dropdown / popover transitions ──────────────────────────────── */
+
+.ps-pop-enter-active,
+.ps-pop-leave-active,
+.nbell-pop-enter-active,
+.nbell-pop-leave-active {
+  transition: opacity var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+
+.ps-pop-enter-from, .ps-pop-leave-to,
+.nbell-pop-enter-from, .nbell-pop-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(.98);
+}
+
+/* ── Modal transitions ───────────────────────────────────────────── */
+
+.ps-modal-enter-active { transition: opacity var(--dur-base) var(--ease-out); }
+.ps-modal-leave-active { transition: opacity var(--dur-fast) var(--ease-out); }
+.ps-modal-enter-from, .ps-modal-leave-to { opacity: 0; }
+
+.ps-modal-enter-active .owner-modal { transition: transform var(--dur-base) var(--ease-out); }
+.ps-modal-leave-active .owner-modal { transition: transform var(--dur-fast) var(--ease-out); }
+.ps-modal-enter-from .owner-modal,
+.ps-modal-leave-to .owner-modal { transform: translateY(8px) scale(.97); }
+
+/* Confirm dialogs are `v-if` mounted across six owner views. A keyframe on
+   the elements themselves animates every one of them on open without
+   touching any of that markup. */
+@keyframes ps-modal-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+.owner-modal-backdrop { animation: ps-fade-in var(--dur-base) var(--ease-out) both; }
+.owner-modal { animation: ps-modal-in var(--dur-base) var(--ease-out) both; }
+
+/* ── List add / remove ───────────────────────────────────────────── */
+
+.ps-list-enter-active {
+  transition: opacity var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+}
+
+.ps-list-leave-active {
+  transition: opacity var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+  position: absolute;
+}
+
+.ps-list-enter-from { opacity: 0; transform: translateY(-6px); }
+.ps-list-leave-to   { opacity: 0; transform: translateX(12px); }
+.ps-list-move       { transition: transform var(--dur-base) var(--ease-out); }
+
+/* ── Images ──────────────────────────────────────────────────────── */
+
+/*
+ * Photographs settle in rather than snapping.
+ *
+ * The fade is additive: the image is never held at `opacity: 0` waiting for
+ * a class to arrive. Gating visibility on the `load` event means a lazy
+ * image the browser decides not to fetch yet — offscreen, or a tab that is
+ * not compositing — stays invisible forever. Animating only once it has
+ * loaded gives the same effect and degrades to "no fade" instead of "no
+ * image".
+ */
+.ps-img-fade.is-loaded { animation: ps-fade-in var(--dur-slow) var(--ease-out); }
+
+/* ==========================================================================
+   Notification bell + panel
+   ========================================================================== */
+
+.nbell { position: relative; }
+
+.nbell-trigger {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--fs-md);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+
+.nbell-trigger:hover {
+  color: var(--brand-600);
+  border-color: var(--brand-edge);
+  background: var(--brand-50);
+}
+
+.nbell-trigger:focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+}
+
+.nbell-trigger.has-arrival > i {
+  animation: ps-bell-nudge .7s var(--ease-inout) 1;
+  transform-origin: 50% 10%;
+}
+
+.nbell-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-full);
+  background: #ef4d63;
+  border: 2px solid var(--surface);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  animation: ps-badge-in var(--dur-base) var(--ease-out) both;
+}
+
+.nbell-panel {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  right: 0;
+  z-index: 220;
+  width: min(360px, calc(100vw - var(--sp-8)));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-lg);
+  overflow: hidden;
+  transform-origin: top right;
+}
+
+.nbell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line-2);
+}
+
+.nbell-head h2 {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.nbell-mark {
+  border: 0;
+  background: none;
+  padding: 2px 4px;
+  border-radius: var(--r-xs);
+  color: var(--brand-600);
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 650;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+
+.nbell-mark:hover { background: var(--brand-50); color: var(--brand-700); }
+.nbell-mark:focus-visible { outline: 2px solid var(--brand-600); outline-offset: 1px; }
+
+.nbell-error {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bad-bg);
+  border-bottom: 1px solid var(--bad-edge);
+  color: var(--bad-fg);
+  font-size: var(--fs-xs);
+}
+
+.nbell-loading { padding: var(--sp-4); }
+.nbell-skel { height: 2.4rem; margin-bottom: var(--sp-3); }
+
+.nbell-empty {
+  margin: 0;
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.nbell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.nbell-item {
+  display: flex;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 0;
+  border-bottom: 1px solid var(--line-2);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.nbell-item:hover { background: var(--surface-2); }
+.nbell-item:focus-visible { outline: 2px solid var(--brand-600); outline-offset: -2px; }
+.nbell-item.is-unread { background: var(--brand-50); }
+.nbell-item.is-unread:hover { background: var(--brand-100); }
+
+.nbell-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  flex-shrink: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  transition: background var(--dur-slow) var(--ease-out);
+}
+
+.nbell-dot.is-on { background: var(--brand-600); }
+
+.nbell-body { min-width: 0; }
+
+.nbell-title {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.nbell-message {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  line-height: var(--lh-snug);
+}
+
+.nbell-time {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--fs-2xs);
+  color: var(--muted-2);
+}
+
+.nbell-all {
+  display: block;
+  padding: var(--sp-3);
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  color: var(--brand-600);
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.nbell-all:hover { background: var(--surface-2); }
+.nbell-all:focus-visible { outline: 2px solid var(--brand-600); outline-offset: -2px; }
+
+.nbell-item-enter-active {
+  transition: opacity var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+}
+
+.nbell-item-enter-from { opacity: 0; transform: translateY(-6px); }
+
+@media (max-width: 480px) {
+  /* Anchored to the viewport rather than the button, so a right-aligned
+     panel cannot run off the edge of a narrow screen. */
+  .nbell-panel {
+    position: fixed;
+    top: 64px;
+    right: var(--sp-3);
+    left: var(--sp-3);
+    width: auto;
+  }
+}
+
+/* ==========================================================================
+   Notifications page
+   ========================================================================== */
+
+.nlist { list-style: none; margin: 0; padding: 0; }
+
+.nlist-row {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: flex-start;
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--line-2);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.nlist-row:last-child { border-bottom: 0; }
+.nlist-row.is-unread { background: var(--brand-50); }
+
+.nlist-main {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nlist-main:focus-visible { outline: 2px solid var(--brand-600); outline-offset: 2px; }
+
+.nlist-title {
+  display: block;
+  font-size: var(--fs-md);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.nlist-message {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.nlist-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  font-size: var(--fs-2xs);
+  color: var(--muted-2);
+}
+
+.nlist-type {
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-full);
+  background: var(--neutral-bg);
+  border: 1px solid var(--neutral-edge);
+  color: var(--neutral-fg);
+  font-weight: 650;
+}
+
+/* ==========================================================================
+   Reduced motion
+   --------------------------------------------------------------------------
+   Decorative movement goes; state changes still resolve instantly so nothing
+   becomes unreachable, and focus outlines are untouched.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .ps-stagger > * { animation-delay: 0ms !important; }
+}

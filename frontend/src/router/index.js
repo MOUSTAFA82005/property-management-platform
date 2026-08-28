@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const routes = [
   // -------------------------------------------------------
@@ -16,11 +17,12 @@ const routes = [
   },
 
   // -------------------------------------------------------
-  // Owner area
+  // Owner area  (requires auth + owner role)
   // -------------------------------------------------------
   {
     path: '/owner',
     component: () => import('../layouts/OwnerLayout.vue'),
+    meta: { requiresAuth: true, requiresOwner: true },
     children: [
       { path: '',          redirect: '/owner/dashboard' },
       {
@@ -68,6 +70,23 @@ const routes = [
         component: () => import('../views/owner/Units/Edit.vue'),
       },
 
+      // Buildings
+      {
+        path: 'buildings',
+        name: 'owner.buildings.index',
+        component: () => import('../views/owner/Buildings/Index.vue'),
+      },
+      {
+        path: 'buildings/create',
+        name: 'owner.buildings.create',
+        component: () => import('../views/owner/Buildings/Create.vue'),
+      },
+      {
+        path: 'buildings/:id/edit',
+        name: 'owner.buildings.edit',
+        component: () => import('../views/owner/Buildings/Edit.vue'),
+      },
+
       // Customers
       {
         path: 'customers',
@@ -104,9 +123,26 @@ const routes = [
         component: () => import('../views/owner/Contracts/Create.vue'),
       },
       {
+        path: 'contracts/:id/edit',
+        name: 'owner.contracts.edit',
+        component: () => import('../views/owner/Contracts/Edit.vue'),
+      },
+      {
+        path: 'notifications',
+        name: 'owner.notifications',
+        component: () => import('../views/NotificationsView.vue'),
+      },
+      {
         path: 'contracts/:id',
         name: 'owner.contracts.show',
         component: () => import('../views/owner/Contracts/Show.vue'),
+      },
+
+      // Profile
+      {
+        path: 'profile',
+        name: 'owner.profile',
+        component: () => import('../views/owner/Profile.vue'),
       },
 
       // Payments
@@ -114,11 +150,6 @@ const routes = [
         path: 'payments',
         name: 'owner.payments.index',
         component: () => import('../views/owner/Payments/Index.vue'),
-      },
-      {
-        path: 'payments/create',
-        name: 'owner.payments.create',
-        component: () => import('../views/owner/Payments/Create.vue'),
       },
       {
         path: 'payments/:id',
@@ -129,77 +160,85 @@ const routes = [
   },
 
   // -------------------------------------------------------
-  // Customer area
+  // Customer / Public area
   // -------------------------------------------------------
   {
     path: '/',
     component: () => import('../layouts/CustomerLayout.vue'),
     children: [
+      // Public routes — no auth required
       {
         path: '',
         name: 'customer.home',
+        meta: { public: true },
         component: () => import('../views/customer/Home.vue'),
       },
-
-      // Properties
       {
         path: 'properties',
         name: 'customer.properties.index',
+        meta: { public: true },
         component: () => import('../views/customer/Properties/Index.vue'),
       },
       {
         path: 'properties/:id',
         name: 'customer.properties.show',
+        meta: { public: true },
         component: () => import('../views/customer/Properties/Show.vue'),
       },
-
-      // Units
       {
         path: 'units/:id',
         name: 'customer.units.show',
+        meta: { public: true },
         component: () => import('../views/customer/Units/Show.vue'),
       },
 
-      // Purchase Requests
+      // Private customer-only routes — require auth AND customer role
+      {
+        path: 'notifications',
+        name: 'customer.notifications',
+        meta: { requiresCustomer: true },
+        component: () => import('../views/NotificationsView.vue'),
+      },
       {
         path: 'purchase-requests',
         name: 'customer.purchase-requests.index',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/PurchaseRequests/Index.vue'),
       },
       {
         path: 'purchase-requests/:id',
         name: 'customer.purchase-requests.show',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/PurchaseRequests/Show.vue'),
       },
-
-      // Contracts
       {
         path: 'contracts',
         name: 'customer.contracts.index',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Contracts/Index.vue'),
       },
       {
         path: 'contracts/:id',
         name: 'customer.contracts.show',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Contracts/Show.vue'),
       },
-
-      // Payments
       {
         path: 'payments',
         name: 'customer.payments.index',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Payments/Index.vue'),
       },
       {
         path: 'payments/:id',
         name: 'customer.payments.show',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Payments/Show.vue'),
       },
-
-      // Profile
       {
         path: 'profile',
         name: 'customer.profile',
+        meta: { requiresCustomer: true },
         component: () => import('../views/customer/Profile.vue'),
       },
     ],
@@ -214,9 +253,48 @@ const router = createRouter({
   routes,
 })
 
-// TODO: Implement route guards
-// - Unauthenticated users accessing protected routes → redirect to /login
-// - Authenticated owners accessing customer routes → redirect to /owner/dashboard
-// - Authenticated customers accessing owner routes → redirect to /
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+
+  // Restore the session behind a stored token before deciding anything.
+  // initializeAuth() is idempotent, so this only hits /auth/me once.
+  if (!auth.initialized) {
+    await auth.initializeAuth()
+  }
+
+  const isAuthPage = to.name === 'login' || to.name === 'register'
+  const isPublic = to.meta?.public === true
+  const requiresAuth = to.meta?.requiresAuth === true
+  const requiresOwner = to.meta?.requiresOwner === true
+  const requiresCustomer = to.meta?.requiresCustomer === true
+
+  // Signed-in users have no business on the login/register screens.
+  if (isAuthPage) {
+    return auth.isAuthenticated ? auth.homeRoute() : true
+  }
+
+  if (isPublic) {
+    return true
+  }
+
+  // Any protected route without a session → login, remembering where they were
+  // headed so the login page can send them back.
+  if ((requiresAuth || requiresOwner || requiresCustomer) && !auth.isAuthenticated) {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  // Owner portal is owner-only. The API enforces this too (role:owner) — this
+  // guard just avoids rendering a page that would only 403.
+  if (requiresOwner && !auth.isOwner()) {
+    return '/'
+  }
+
+  // Customer account pages are customer-only; owners go to their portal.
+  if (requiresCustomer && !auth.isCustomer()) {
+    return '/owner/dashboard'
+  }
+
+  return true
+})
 
 export default router

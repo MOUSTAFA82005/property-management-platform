@@ -1,7 +1,7 @@
 <script setup>
-// TODO: GET /api/owner/units/:id then PUT /api/owner/units/:id
+import UnitForm from './UnitForm.vue'
 </script>
 
 <template>
-  <div><!-- TODO: Edit unit form --></div>
+  <UnitForm mode="edit" />
 </template>

@@ -1,0 +1,130 @@
+%% PropSpace — Entity Relationship Diagram (source)
+%% Generated from backend/database/migrations and app/Models.
+%% Edit here, then paste into https://mermaid.live to export an image.
+erDiagram
+    USERS ||--o{ PROPERTIES : "owns (owner_id)"
+    USERS ||--o{ CONTRACTS : "holds (user_id)"
+    USERS ||--o{ PURCHASE_REQUESTS : "raises (customer_id)"
+    USERS ||--o{ NOTIFICATIONS : "notifiable (polymorphic)"
+    USERS ||--o{ PERSONAL_ACCESS_TOKENS : "tokenable (polymorphic)"
+
+    PROPERTIES ||--o{ BUILDINGS : "contains"
+    BUILDINGS  ||--o{ UNITS : "contains"
+    UNITS      ||--o{ CONTRACTS : "is let under"
+    UNITS      ||--o{ PURCHASE_REQUESTS : "is requested by"
+    CONTRACTS  ||--o{ PAYMENTS : "is billed by"
+
+    USERS {
+        bigint   id PK
+        string   name
+        string   email UK
+        timestamp email_verified_at "nullable"
+        string   password "hashed"
+        string   phone "nullable"
+        enum     role "owner|customer, default customer"
+        enum     status "active|inactive, default active"
+        string   remember_token "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PROPERTIES {
+        bigint   id PK
+        bigint   owner_id FK "users.id, RESTRICT on delete"
+        string   name
+        text     address
+        string   city
+        text     description "nullable"
+        string   property_type
+        enum     status "active|inactive, default active"
+        boolean  is_published "default false"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    BUILDINGS {
+        bigint   id PK
+        bigint   property_id FK "properties.id, CASCADE on delete"
+        string   name
+        int      floors_count "unsigned, default 1"
+        text     description "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    UNITS {
+        bigint   id PK
+        bigint   building_id FK "buildings.id, CASCADE on delete"
+        string   unit_number "UNIQUE with building_id"
+        int      floor "unsigned, default 0"
+        string   unit_type
+        decimal  area "10,2 nullable"
+        tinyint  bedrooms "unsigned, default 0"
+        tinyint  bathrooms "unsigned, default 0"
+        decimal  monthly_rent "10,2"
+        enum     status "available|occupied|reserved, default available"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CONTRACTS {
+        bigint   id PK
+        bigint   user_id FK "users.id (the customer), RESTRICT on delete"
+        bigint   unit_id FK "units.id, RESTRICT on delete"
+        date     start_date
+        date     end_date
+        decimal  monthly_rent "10,2"
+        decimal  security_deposit "10,2 default 0"
+        enum     status "active|expired|terminated, default active"
+        text     notes "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PAYMENTS {
+        bigint   id PK
+        bigint   contract_id FK "contracts.id, RESTRICT on delete"
+        decimal  amount "10,2"
+        date     due_date
+        date     paid_date "nullable"
+        string   payment_method "nullable"
+        enum     status "pending|paid|overdue|cancelled, default pending"
+        string   reference "nullable UK"
+        text     notes "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PURCHASE_REQUESTS {
+        bigint   id PK
+        bigint   customer_id FK "users.id, RESTRICT on delete"
+        bigint   unit_id FK "units.id, RESTRICT on delete"
+        enum     status "pending|approved|rejected|cancelled, default pending"
+        text     notes "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    NOTIFICATIONS {
+        uuid     id PK
+        string   type "notification class name"
+        string   notifiable_type "always the User model"
+        bigint   notifiable_id "no FK - polymorphic"
+        text     data "JSON payload"
+        timestamp read_at "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    PERSONAL_ACCESS_TOKENS {
+        bigint   id PK
+        string   tokenable_type "always the User model"
+        bigint   tokenable_id "no FK - polymorphic"
+        text     name
+        string   token "64 chars, UK"
+        text     abilities "nullable"
+        timestamp last_used_at "nullable"
+        timestamp expires_at "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }

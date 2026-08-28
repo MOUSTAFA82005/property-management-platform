@@ -1,7 +1,7 @@
 <script setup>
-// TODO: POST /api/owner/units
+import UnitForm from './UnitForm.vue'
 </script>
 
 <template>
-  <div><!-- TODO: Create unit form --></div>
+  <UnitForm mode="create" />
 </template>
