@@ -10,13 +10,14 @@ test.describe('Owner units CRUD', () => {
     await loginAsOwner(page, OWNERS.hassan.email)
   })
 
-  test('lists only this owner units and never offers a sold status', async ({ page }) => {
+  test('lists this owner units and never offers a sold status', async ({ page }) => {
     await page.goto('/owner/units')
     await page.waitForLoadState('networkidle')
 
     const text = await bodyText(page)
+    // Units from every property the owner holds, in both cities.
     expect(text).toContain('A-101')
-    expect(text).not.toContain('M-501')
+    expect(text).toContain('M-501')
     expect(text).not.toMatch(/\bSold\b/)
 
     const statuses = await page.locator('select.owner-select').first().locator('option').allInnerTexts()
@@ -86,12 +87,12 @@ test.describe('Owner units CRUD', () => {
     await expect(page.getByText(/has contracts against it|has purchase requests against it/i).first()).toBeVisible()
   })
 
-  test('the building picker offers only this owner buildings', async ({ page }) => {
+  test('the building picker offers this owner buildings', async ({ page }) => {
     await page.goto('/owner/units/create')
     await page.waitForLoadState('networkidle')
 
     const options = (await page.getByLabel('Building').locator('option').allInnerTexts()).join(' ')
     expect(options).toContain('Tower A')
-    expect(options).not.toContain('Marina Tower')
+    expect(options).toContain('Marina Tower')
   })
 })

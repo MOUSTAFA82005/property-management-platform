@@ -14,9 +14,10 @@ test.describe('Owner contracts', () => {
     await page.waitForLoadState('networkidle')
 
     const text = await bodyText(page)
+    // Every seeded contract is on one of the owner's units, across both
+    // published properties.
     expect(text).toContain(CUSTOMERS.omar.name)
-    // Nadia's tenant must not appear.
-    expect(text).not.toContain(CUSTOMERS.youssef.name)
+    expect(text).toContain(CUSTOMERS.youssef.name)
   })
 
   test('creating a contract occupies the unit and shows up in the list', async ({ page }) => {
@@ -26,12 +27,16 @@ test.describe('Owner contracts', () => {
     await page.waitForLoadState('networkidle')
 
     // Capture which unit we are letting so the status change can be verified.
+    // A reserved unit is only lettable to the customer whose approved request
+    // reserved it, so this picks a free one.
     await expect(page.getByLabel('Unit').locator('option')).not.toHaveCount(1)
-    const unitOption = await page.getByLabel('Unit').locator('option').nth(1).innerText()
-    const unitNumber = unitOption.split('—')[1].trim().split(' ')[0]
+    const unitOptions = await page.getByLabel('Unit').locator('option').allInnerTexts()
+    const freeIndex = unitOptions.findIndex((t, i) => i > 0 && !t.includes('reserved'))
+    expect(freeIndex).toBeGreaterThan(0)
+    const unitNumber = unitOptions[freeIndex].split('—')[1].trim().split(' ')[0]
 
     await page.getByLabel('Customer').selectOption({ index: 1 })
-    await page.getByLabel('Unit').selectOption({ index: 1 })
+    await page.getByLabel('Unit').selectOption({ index: freeIndex })
     await page.getByLabel('Start date').fill('2026-09-01')
     await page.getByLabel('End date').fill('2027-08-31')
     await page.getByRole('button', { name: /create contract/i }).click()
@@ -52,27 +57,44 @@ test.describe('Owner contracts', () => {
     expect(remaining).not.toContain(unitNumber)
   })
 
-  test('an owner cannot write a contract against another owner unit', async ({ request }) => {
+  test('an approved request becomes a contract, but only for the customer who raised it', async ({ request }) => {
     const hassan = await apiLogin(request, OWNERS.hassan.email)
-    const nadia = await apiLogin(request, OWNERS.nadia.email)
+    const headers = { Authorization: `Bearer ${hassan}`, Accept: 'application/json' }
 
-    const nadiaUnits = (await (await apiGet(request, nadia, '/owner/units?status=available')).json()).data
-    expect(nadiaUnits.length).toBeGreaterThan(0)
+    // Approving a request reserves the unit. The contract that closes the
+    // request has to be writable from that reserved state.
+    const approved = (await (await apiGet(request, hassan, '/owner/purchase-requests?status=approved')).json()).data[0]
+    expect(approved).toBeTruthy()
 
-    const response = await request.post(`${API_URL}/api/owner/contracts`, {
-      headers: { Authorization: `Bearer ${hassan}`, Accept: 'application/json' },
-      data: {
-        user_id: 3,
-        unit_id: nadiaUnits[0].id,
-        start_date: '2026-09-01',
-        end_date: '2027-08-31',
-        monthly_rent: 1000,
-        security_deposit: 2000,
-        status: 'active',
-      },
+    const customers = (await (await apiGet(request, hassan, '/owner/customers')).json()).data
+    const someoneElse = customers.find((c) => c.id !== approved.customer_id)
+    expect(someoneElse).toBeTruthy()
+
+    const lease = {
+      unit_id: approved.unit_id,
+      start_date: '2026-09-01',
+      end_date: '2027-08-31',
+      monthly_rent: 1000,
+      security_deposit: 2000,
+      status: 'active',
+    }
+
+    // The reservation belongs to one customer — nobody else can be moved in.
+    const wrongCustomer = await request.post(`${API_URL}/api/owner/contracts`, {
+      headers,
+      data: { ...lease, user_id: someoneElse.id },
     })
+    expect(wrongCustomer.status()).toBe(422)
 
-    expect(response.status()).toBe(403)
+    const rightCustomer = await request.post(`${API_URL}/api/owner/contracts`, {
+      headers,
+      data: { ...lease, user_id: approved.customer_id },
+    })
+    expect(rightCustomer.status()).toBe(201)
+
+    // And the unit has moved on from reserved to occupied.
+    const unit = (await (await apiGet(request, hassan, `/owner/units/${approved.unit_id}`)).json()).data
+    expect(unit.status).toBe('occupied')
   })
 
   test('the customer sees their own contract with the right unit and property', async ({ page }) => {

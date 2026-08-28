@@ -4,7 +4,7 @@ import { API_URL } from '../../playwright.config.js'
  * Thin direct-API helper.
  *
  * Used only where a check is about the API contract itself (for example that
- * one owner's record 403s for another owner). UI behaviour is always asserted
+ * one customer's record 403s for another). UI behaviour is always asserted
  * through the browser.
  */
 export async function apiLogin(request, email, password = 'password') {

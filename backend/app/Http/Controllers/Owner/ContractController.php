@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Owner;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ContractResource;
 use App\Models\Contract;
+use App\Models\PurchaseRequest;
 use App\Models\User;
 use App\Models\Unit;
 use Illuminate\Http\JsonResponse;
@@ -64,7 +65,11 @@ class ContractController extends Controller
             ], 403);
         }
 
-        if ($unit->status !== 'available') {
+        // A free unit can always be let. A reserved one can only be let to the
+        // customer whose approved purchase request reserved it — approval is
+        // the step this contract is being written from, so refusing it here
+        // would leave an approved request with no way to become a contract.
+        if (! $this->unitIsLettableTo($unit, $customer)) {
             return response()->json([
                 'message' => 'This unit is not available.',
             ], 422);
@@ -156,6 +161,16 @@ class ContractController extends Controller
     {
         Gate::authorize('delete', $contract);
 
+        // Payments are restricted on delete for good reason — the collection
+        // history has to outlive the contract. Refusing here gives a clear
+        // message instead of a database-level failure, and matches how a
+        // property with dependent records already behaves.
+        if ($contract->payments()->exists()) {
+            return response()->json([
+                'message' => 'This contract still has payments recorded against it. Remove those payments first.',
+            ], 409);
+        }
+
         $unit = $contract->unit;
 
         $contract->delete();
@@ -167,5 +182,29 @@ class ContractController extends Controller
         }
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Whether a contract may be written against this unit for this customer.
+     *
+     * `available` is the ordinary case. `reserved` is the purchase-request
+     * case: the unit was reserved when the owner approved that customer's
+     * request, and the contract is the next step in the same flow.
+     */
+    private function unitIsLettableTo(Unit $unit, User $customer): bool
+    {
+        if ($unit->status === 'available') {
+            return true;
+        }
+
+        if ($unit->status !== 'reserved') {
+            return false;
+        }
+
+        return PurchaseRequest::query()
+            ->where('unit_id', $unit->id)
+            ->where('customer_id', $customer->id)
+            ->where('status', 'approved')
+            ->exists();
     }
 }

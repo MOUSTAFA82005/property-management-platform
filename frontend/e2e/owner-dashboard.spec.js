@@ -30,11 +30,13 @@ test.describe('Owner dashboard', () => {
     }
   })
 
-  test('the property overview lists only this owner properties with unit counts', async ({ page }) => {
+  test('the property overview lists the owner whole portfolio with unit counts', async ({ page }) => {
     const overview = page.getByRole('table').first()
+
+    // Published and unpublished alike — the owner view is not the catalog.
     await expect(overview.getByRole('cell', { name: PROPERTIES.nileView.name })).toBeVisible()
     await expect(overview.getByRole('cell', { name: PROPERTIES.palmGardens.name })).toBeVisible()
-    expect(await bodyText(page)).not.toContain(PROPERTIES.marina.name)
+    await expect(overview.getByRole('cell', { name: PROPERTIES.marina.name })).toBeVisible()
   })
 
   test('recent payments and recent requests show seeded records', async ({ page }) => {

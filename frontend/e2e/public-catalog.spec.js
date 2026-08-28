@@ -36,7 +36,14 @@ test.describe('Public catalog (no authentication)', () => {
   test('a published property opens and shows its units', async ({ page }) => {
     await page.goto('/properties')
     await page.waitForLoadState('networkidle')
-    await page.getByRole('link', { name: /view details/i }).first().click()
+
+    // Open Nile View by name, not by position: the catalog is ordered by
+    // created_at and the seeder writes every property inside the same second,
+    // so which card lands first is arbitrary.
+    await page.getByRole('article')
+      .filter({ hasText: PROPERTIES.nileView.name })
+      .getByRole('link', { name: /view details/i })
+      .click()
 
     await page.waitForURL(/\/properties\/\d+$/)
     await page.waitForLoadState('networkidle')

@@ -17,9 +17,12 @@ use Tests\TestCase;
 /**
  * Guards the demo dataset.
  *
- * Sprint 4 will build ownership isolation against this data, so the shape it
- * relies on — who is connected to which owner, and who deliberately is not —
- * is asserted here rather than being left to whoever edits the seeder next.
+ * PropSpace has exactly one owner and six customers. That composition, and
+ * the story the rows tell about each other, is asserted here rather than
+ * being left to whoever edits the seeder next.
+ *
+ * Ownership isolation itself is proved in OwnerIsolationTest, which builds
+ * its own portfolios instead of leaning on this data.
  */
 class DemoSeedTest extends TestCase
 {
@@ -40,12 +43,14 @@ class DemoSeedTest extends TestCase
     // Volume
     // =================================================================
 
-    public function test_it_seeds_the_expected_cast_of_users(): void
+    public function test_it_seeds_exactly_one_owner_and_six_customers(): void
     {
-        $this->assertSame(2, User::where('role', 'owner')->count());
-        $this->assertSame(5, User::where('role', 'customer')->count());
+        $this->assertSame(1, User::where('role', 'owner')->count());
+        $this->assertSame(6, User::where('role', 'customer')->count());
         $this->assertSame(7, User::count());
         $this->assertSame(7, User::where('status', 'active')->count());
+
+        $this->assertSame('owner@propspace.com', User::where('role', 'owner')->value('email'));
     }
 
     public function test_it_seeds_the_expected_portfolio(): void
@@ -55,7 +60,7 @@ class DemoSeedTest extends TestCase
         $this->assertSame(12, Unit::count());
         $this->assertSame(5, Contract::count());
         $this->assertSame(20, Payment::count());
-        $this->assertSame(7, PurchaseRequest::count());
+        $this->assertSame(8, PurchaseRequest::count());
     }
 
     public function test_passwords_are_hashed_and_the_documented_one_works(): void
@@ -143,23 +148,18 @@ class DemoSeedTest extends TestCase
         $this->assertSame(0, PurchaseRequest::whereNotIn('customer_id', $customerIds)->count());
     }
 
-    public function test_properties_are_split_across_both_owners(): void
+    public function test_every_property_belongs_to_the_single_owner(): void
     {
         $hassan = $this->owner('owner@propspace.com');
-        $nadia = $this->owner('owner2@propspace.com');
 
-        $this->assertSame(2, $hassan->properties()->count());
-        $this->assertSame(1, $nadia->properties()->count());
+        $this->assertSame(3, $hassan->properties()->count());
+        $this->assertSame(0, Property::where('owner_id', '!=', $hassan->id)->count());
     }
 
     public function test_both_published_and_unpublished_properties_exist(): void
     {
         $this->assertSame(2, Property::where('is_published', true)->count());
         $this->assertSame(1, Property::where('is_published', false)->count());
-
-        // A public catalog must have stock from both owners to browse.
-        $publishedOwners = Property::where('is_published', true)->distinct()->pluck('owner_id');
-        $this->assertCount(2, $publishedOwners);
     }
 
     // =================================================================
@@ -223,7 +223,7 @@ class DemoSeedTest extends TestCase
     }
 
     // =================================================================
-    // Shape Sprint 4 will test isolation against
+    // The owner's relationships
     // =================================================================
 
     /** @return array<int, int> */
@@ -238,47 +238,37 @@ class DemoSeedTest extends TestCase
             ->all();
     }
 
-    public function test_each_owner_has_customers_the_other_owner_must_not_see(): void
+    public function test_every_seeded_customer_reaches_the_owner(): void
     {
-        $hassan = $this->owner('owner@propspace.com');
-        $nadia = $this->owner('owner2@propspace.com');
+        $related = $this->customerIdsRelatedTo($this->owner('owner@propspace.com'));
 
-        $hassansCustomers = $this->customerIdsRelatedTo($hassan);
-        $nadiasCustomers = $this->customerIdsRelatedTo($nadia);
-
-        $youssef = User::where('email', 'customer3@propspace.com')->firstOrFail();
-        $salma = User::where('email', 'customer2@propspace.com')->firstOrFail();
-        $dina = User::where('email', 'customer4@propspace.com')->firstOrFail();
-
-        // Youssef only ever deals with Nadia.
-        $this->assertContains($youssef->id, $nadiasCustomers);
-        $this->assertNotContains($youssef->id, $hassansCustomers);
-
-        // Salma and Dina only ever deal with Hassan.
-        $this->assertContains($salma->id, $hassansCustomers);
-        $this->assertNotContains($salma->id, $nadiasCustomers);
-        $this->assertContains($dina->id, $hassansCustomers);
-        $this->assertNotContains($dina->id, $nadiasCustomers);
-
-        // And at least one customer is shared, so isolation cannot be faked
-        // by simply partitioning the customer table in half.
-        $this->assertNotEmpty(array_intersect($hassansCustomers, $nadiasCustomers));
-    }
-
-    public function test_both_owners_have_contracts_and_payments_of_their_own(): void
-    {
-        foreach (['owner@propspace.com', 'owner2@propspace.com'] as $email) {
-            $owner = $this->owner($email);
-
-            $unitIds = Unit::whereHas('building.property', fn ($q) => $q->where('owner_id', $owner->id))->pluck('id');
-            $contractIds = Contract::whereIn('unit_id', $unitIds)->pluck('id');
-
-            $this->assertGreaterThan(0, $contractIds->count(), "{$email} has no contracts to isolate.");
-            $this->assertGreaterThan(
-                0,
-                Payment::whereIn('contract_id', $contractIds)->count(),
-                "{$email} has no payments to isolate."
+        // The owner customer list is built from contracts and requests, so a
+        // customer nothing connects would silently vanish from the demo.
+        foreach (User::where('role', 'customer')->get() as $customer) {
+            $this->assertContains(
+                $customer->id,
+                $related,
+                "{$customer->email} is seeded but connected to nothing the owner can see."
             );
         }
+    }
+
+    public function test_one_customer_enquires_without_holding_a_contract(): void
+    {
+        $nour = User::where('email', 'customer6@propspace.com')->firstOrFail();
+
+        $this->assertSame(0, Contract::where('user_id', $nour->id)->count());
+        $this->assertGreaterThan(0, PurchaseRequest::where('customer_id', $nour->id)->count());
+    }
+
+    public function test_the_owner_has_contracts_and_payments_to_manage(): void
+    {
+        $owner = $this->owner('owner@propspace.com');
+
+        $unitIds = Unit::whereHas('building.property', fn ($q) => $q->where('owner_id', $owner->id))->pluck('id');
+        $contractIds = Contract::whereIn('unit_id', $unitIds)->pluck('id');
+
+        $this->assertSame(Contract::count(), $contractIds->count());
+        $this->assertSame(Payment::count(), Payment::whereIn('contract_id', $contractIds)->count());
     }
 }

@@ -151,21 +151,23 @@ The SPA calls `http://127.0.0.1:8000/api` by default. Override with `VITE_API_BA
 `php artisan migrate:fresh --seed` creates a complete scenario. **Every account uses the
 password `password`.**
 
+PropSpace has two roles, Owner and Customer, and exactly one owner account.
+
 | Role | Email | Notes |
 | --- | --- | --- |
-| Owner | `owner@propspace.com` | Hassan Farouk — Nile View, Palm Gardens |
-| Owner | `owner2@propspace.com` | Nadia Mansour — Alexandria Marina |
-| Customer | `customer@propspace.com` | Omar Sabry — deals with both owners |
-| Customer | `customer2@propspace.com` | Salma Adel — Hassan only |
-| Customer | `customer3@propspace.com` | Youssef Ibrahim — Nadia only |
-| Customer | `customer4@propspace.com` | Dina Hafez — Hassan only |
-| Customer | `customer5@propspace.com` | Karim Nassar — deals with both owners |
+| Owner | `owner@propspace.com` | Hassan Farouk — all three properties |
+| Customer | `customer@propspace.com` | Omar Sabry — tenant, Nile View A-101 |
+| Customer | `customer2@propspace.com` | Salma Adel — tenant, Nile View B-102 |
+| Customer | `customer3@propspace.com` | Youssef Ibrahim — tenant, Marina M-501 |
+| Customer | `customer4@propspace.com` | Dina Hafez — former tenant of B-102 |
+| Customer | `customer5@propspace.com` | Karim Nassar — former tenant of M-502 |
+| Customer | `customer6@propspace.com` | Nour Khalil — enquiring, holds no contract |
 
-The relationships are deliberately asymmetric so ownership isolation is testable: an endpoint
-that leaks shows it immediately.
+The cast covers every state the app renders: current tenants, former tenants whose units are
+free again, and a customer who has only ever enquired.
 
 Seeded volume: 3 properties, 5 buildings, 12 units (available/occupied/reserved), 5 contracts,
-20 payments (paid/pending/overdue/cancelled) and 7 purchase requests.
+20 payments (paid/pending/overdue/cancelled) and 8 purchase requests.
 
 ---
 

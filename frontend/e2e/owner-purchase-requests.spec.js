@@ -69,16 +69,18 @@ test.describe('Owner purchase requests', () => {
     expect(rejectInstead.status()).toBe(422)
   })
 
-  test('an owner cannot decide a request belonging to another owner', async ({ request }) => {
+  test('a customer cannot decide their own request', async ({ request }) => {
     const hassan = await apiLogin(request, OWNERS.hassan.email)
-    const nadia = await apiLogin(request, OWNERS.nadia.email)
+    const omar = await apiLogin(request, CUSTOMERS.omar.email)
 
-    const nadiaRequest = (await (await apiGet(request, nadia, '/owner/purchase-requests')).json()).data[0]
-    const headers = { Authorization: `Bearer ${hassan}`, Accept: 'application/json' }
+    const pending = (await (await apiGet(request, hassan, '/owner/purchase-requests?status=pending')).json()).data[0]
+    expect(pending).toBeTruthy()
 
-    expect((await request.post(`${API_URL}/api/owner/purchase-requests/${nadiaRequest.id}/approve`, { headers })).status()).toBe(403)
-    expect((await request.post(`${API_URL}/api/owner/purchase-requests/${nadiaRequest.id}/reject`, { headers })).status()).toBe(403)
-    expect((await apiGet(request, hassan, `/owner/purchase-requests/${nadiaRequest.id}`)).status()).toBe(403)
+    // Approval is the owner's decision alone — the customer-facing token must
+    // not reach the owner endpoints at all.
+    const headers = { Authorization: `Bearer ${omar}`, Accept: 'application/json' }
+    expect((await request.post(`${API_URL}/api/owner/purchase-requests/${pending.id}/approve`, { headers })).status()).toBe(403)
+    expect((await request.post(`${API_URL}/api/owner/purchase-requests/${pending.id}/reject`, { headers })).status()).toBe(403)
   })
 
   test('the detail page shows the customer and unit behind a request', async ({ page }) => {

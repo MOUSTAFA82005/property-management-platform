@@ -36,8 +36,8 @@ test.describe('Customer purchase request journey', () => {
   })
 
   test('a second open request for the same unit is refused', async ({ page }) => {
-    // Youssef has no seeded requests against Hassan's properties, so the
-    // first request here is genuinely his first for this unit.
+    // Youssef holds no seeded request in Nile View, so the first request
+    // here is genuinely his first for this unit.
     await loginAsCustomer(page, CUSTOMERS.youssef.email)
 
     await page.goto('/properties/1')
@@ -78,14 +78,10 @@ test.describe('Customer purchase request journey', () => {
     await loginAsOwner(page, OWNERS.hassan.email)
     await page.goto('/owner/purchase-requests')
     await page.waitForLoadState('networkidle')
-    expect(await bodyText(page)).toContain(CUSTOMERS.karim.name)
 
-    // Nadia must not see a request against Hassan's unit.
-    await loginAsOwner(page, OWNERS.nadia.email)
-    await page.goto('/owner/purchase-requests')
-    await page.waitForLoadState('networkidle')
-    const nadiaText = await bodyText(page)
-    expect(nadiaText).not.toContain(PROPERTIES.nileView.name)
+    const ownerText = await bodyText(page)
+    expect(ownerText).toContain(CUSTOMERS.karim.name)
+    expect(ownerText).toContain(PROPERTIES.nileView.name)
   })
 })
 

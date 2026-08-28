@@ -20,22 +20,21 @@ use Illuminate\Support\Carbon;
  *
  *     password
  *
- *   OWNERS
- *     owner@propspace.com      Hassan Farouk   — Nile View, Palm Gardens
- *     owner2@propspace.com     Nadia Mansour   — Alexandria Marina
+ *   OWNER (the platform has exactly one)
+ *     owner@propspace.com      Hassan Farouk   — all three properties
  *
  *   CUSTOMERS
- *     customer@propspace.com   Omar Sabry      — tenant of Hassan, enquiring with Nadia
- *     customer2@propspace.com  Salma Adel      — tenant of Hassan
- *     customer3@propspace.com  Youssef Ibrahim — tenant of Nadia only
- *     customer4@propspace.com  Dina Hafez      — former tenant of Hassan
- *     customer5@propspace.com  Karim Nassar    — former tenant of Nadia, enquiring with Hassan
+ *     customer@propspace.com   Omar Sabry      — tenant, Nile View A-101
+ *     customer2@propspace.com  Salma Adel      — tenant, Nile View B-102
+ *     customer3@propspace.com  Youssef Ibrahim — tenant, Marina M-501
+ *     customer4@propspace.com  Dina Hafez      — former tenant of B-102
+ *     customer5@propspace.com  Karim Nassar    — former tenant of M-502
+ *     customer6@propspace.com  Nour Khalil     — enquiring only, no contract yet
  * ----------------------------------------------------------------------
  *
- * The relationships are deliberately asymmetric so ownership isolation is
- * actually testable: Youssef is connected to Nadia and never to Hassan,
- * while Salma and Dina are connected to Hassan and never to Nadia. An owner
- * endpoint that leaks will show it immediately.
+ * The cast covers every state the app has to render: current tenants, former
+ * tenants whose units are free again, and a customer who has only enquired
+ * and holds no contract at all.
  */
 class DemoDataSeeder extends Seeder
 {
@@ -43,9 +42,9 @@ class DemoDataSeeder extends Seeder
 
     public function run(): void
     {
-        $owners = $this->seedOwners();
+        $owner = $this->seedOwner();
         $customers = $this->seedCustomers();
-        $units = $this->seedPortfolio($owners);
+        $units = $this->seedPortfolio($owner);
         $contracts = $this->seedContracts($customers, $units);
 
         $this->seedPayments($contracts);
@@ -58,13 +57,10 @@ class DemoDataSeeder extends Seeder
     // Users
     // =================================================================
 
-    /** @return array<string, User> */
-    private function seedOwners(): array
+    /** PropSpace has exactly one owner — everything below hangs off them. */
+    private function seedOwner(): User
     {
-        return [
-            'hassan' => $this->user('owner@propspace.com', 'Hassan Farouk', 'owner', '01012000001'),
-            'nadia'  => $this->user('owner2@propspace.com', 'Nadia Mansour', 'owner', '01012000002'),
-        ];
+        return $this->user('owner@propspace.com', 'Hassan Farouk', 'owner', '01012000001');
     }
 
     /** @return array<string, User> */
@@ -76,6 +72,7 @@ class DemoDataSeeder extends Seeder
             'youssef' => $this->user('customer3@propspace.com', 'Youssef Ibrahim', 'customer', '01098000003'),
             'dina'    => $this->user('customer4@propspace.com', 'Dina Hafez', 'customer', '01098000004'),
             'karim'   => $this->user('customer5@propspace.com', 'Karim Nassar', 'customer', '01098000005'),
+            'nour'    => $this->user('customer6@propspace.com', 'Nour Khalil', 'customer', '01098000006'),
         ];
     }
 
@@ -99,13 +96,12 @@ class DemoDataSeeder extends Seeder
     // =================================================================
 
     /**
-     * @param  array<string, User>  $owners
      * @return array<string, Unit>
      */
-    private function seedPortfolio(array $owners): array
+    private function seedPortfolio(User $owner): array
     {
-        // ---- Hassan, property 1: published, the main demo property -----
-        $nileView = $this->property($owners['hassan'], [
+        // ---- Property 1: published, the main demo property -------------
+        $nileView = $this->property($owner, [
             'name'          => 'Nile View Residences',
             'address'       => '18 Corniche El Nil, Garden City',
             'city'          => 'Cairo',
@@ -117,9 +113,9 @@ class DemoDataSeeder extends Seeder
         $nileA = $this->building($nileView, 'Tower A', 6, 'North tower, river-facing units.');
         $nileB = $this->building($nileView, 'Tower B', 4, 'South tower, courtyard-facing units.');
 
-        // ---- Hassan, property 2: unpublished, so public browsing can be
-        //      tested against a property that must stay hidden -----------
-        $palmGardens = $this->property($owners['hassan'], [
+        // ---- Property 2: unpublished, so public browsing can be tested
+        //      against a property that must stay hidden ------------------
+        $palmGardens = $this->property($owner, [
             'name'          => 'Palm Gardens Compound',
             'address'       => 'Plot 44, Zayed Dunes, 6th of October',
             'city'          => '6th of October',
@@ -131,8 +127,8 @@ class DemoDataSeeder extends Seeder
         $palmOne = $this->building($palmGardens, 'Block 1', 2, 'Townhouse block facing the main garden.');
         $palmTwo = $this->building($palmGardens, 'Block 2', 2, 'Standalone villas along the eastern wall.');
 
-        // ---- Nadia, property 3: published ------------------------------
-        $marina = $this->property($owners['nadia'], [
+        // ---- Property 3: published, in a second city -------------------
+        $marina = $this->property($owner, [
             'name'          => 'Alexandria Marina Towers',
             'address'       => '7 El Geish Road, Stanley',
             'city'          => 'Alexandria',
@@ -144,21 +140,21 @@ class DemoDataSeeder extends Seeder
         $marinaTower = $this->building($marina, 'Marina Tower', 12, 'Single tower, twelve floors, sea-facing from floor five up.');
 
         return [
-            // Hassan · Nile View · Tower A
+            // Nile View · Tower A
             'A-101' => $this->unit($nileA, 'A-101', 1, 'Apartment', 110.00, 2, 1, 14000, 'occupied'),
             'A-102' => $this->unit($nileA, 'A-102', 1, 'Apartment', 75.00, 1, 1, 9500, 'available'),
             'A-201' => $this->unit($nileA, 'A-201', 2, 'Apartment', 145.00, 3, 2, 19000, 'reserved'),
 
-            // Hassan · Nile View · Tower B
+            // Nile View · Tower B
             'B-101' => $this->unit($nileB, 'B-101', 1, 'Studio', 48.00, 0, 1, 7000, 'available'),
             'B-102' => $this->unit($nileB, 'B-102', 1, 'Apartment', 105.00, 2, 2, 13500, 'occupied'),
 
-            // Hassan · Palm Gardens (unpublished)
+            // Palm Gardens (unpublished)
             'G-01' => $this->unit($palmOne, 'G-01', 0, 'Townhouse', 210.00, 4, 3, 27000, 'available'),
             'G-02' => $this->unit($palmOne, 'G-02', 0, 'Townhouse', 210.00, 4, 3, 27000, 'reserved'),
             'G-11' => $this->unit($palmTwo, 'G-11', 0, 'Villa', 320.00, 5, 4, 42000, 'available'),
 
-            // Nadia · Alexandria Marina
+            // Alexandria Marina
             'M-501' => $this->unit($marinaTower, 'M-501', 5, 'Apartment', 120.00, 2, 2, 16000, 'occupied'),
             'M-502' => $this->unit($marinaTower, 'M-502', 5, 'Apartment', 68.00, 1, 1, 10000, 'available'),
             'M-901' => $this->unit($marinaTower, 'M-901', 9, 'Penthouse', 260.00, 4, 3, 38000, 'reserved'),
@@ -226,7 +222,7 @@ class DemoDataSeeder extends Seeder
     private function seedContracts(array $customers, array $units): array
     {
         return [
-            // --- Hassan's contracts ------------------------------------
+            // --- Nile View -------------------------------------------
             'omar_a101' => $this->contract(
                 $customers['omar'], $units['A-101'],
                 now()->subMonths(5)->startOfMonth(), now()->addMonths(7)->endOfMonth(),
@@ -248,7 +244,7 @@ class DemoDataSeeder extends Seeder
                 'Completed lease. Deposit returned in full.'
             ),
 
-            // --- Nadia's contracts -------------------------------------
+            // --- Alexandria Marina -------------------------------------
             'youssef_m501' => $this->contract(
                 $customers['youssef'], $units['M-501'],
                 now()->subMonths(8)->startOfMonth(), now()->addMonths(4)->endOfMonth(),
@@ -316,7 +312,7 @@ class DemoDataSeeder extends Seeder
         $this->payment($contracts['dina_b102'], 12000, $this->monthStart(-16), $this->monthStart(-16), 'paid', 'cash');
         $this->payment($contracts['dina_b102'], 12000, $this->monthStart(-15), $this->monthStart(-15), 'paid', 'cash');
 
-        // Youssef — Nadia's active tenant, one month behind.
+        // Youssef — active tenant in the Marina tower, one month behind.
         $this->payment($contracts['youssef_m501'], 16000, $this->monthStart(-3), $this->monthStart(-3), 'paid', 'bank_transfer');
         $this->payment($contracts['youssef_m501'], 16000, $this->monthStart(-2), $this->monthStart(-2)->addDay(), 'paid', 'bank_transfer');
         $this->payment($contracts['youssef_m501'], 16000, $this->monthStart(-1), $this->monthStart(-1)->addDays(4), 'paid', 'instapay');
@@ -386,6 +382,9 @@ class DemoDataSeeder extends Seeder
         $this->purchaseRequest($customers['salma'], $units['G-11'], 'pending',
             'Would like a viewing this weekend if possible.');
 
+        $this->purchaseRequest($customers['nour'], $units['M-502'], 'pending',
+            'First enquiry. Asked for photos of the sea-facing balcony.');
+
         // Rejected and cancelled → the closed states.
         $this->purchaseRequest($customers['karim'], $units['M-902'], 'rejected',
             'Rejected: unit is being held for an existing tenant transferring floors.');
@@ -416,8 +415,8 @@ class DemoDataSeeder extends Seeder
             PurchaseRequest::count(),
         ));
 
-        $this->command?->line('  Owners:    owner@propspace.com / owner2@propspace.com');
-        $this->command?->line('  Customers: customer@propspace.com … customer5@propspace.com');
+        $this->command?->line('  Owner:     owner@propspace.com');
+        $this->command?->line('  Customers: customer@propspace.com … customer6@propspace.com');
         $this->command?->line('  Password:  password');
     }
 }

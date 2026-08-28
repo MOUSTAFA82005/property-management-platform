@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { prepareDatabase } from './helpers/database.js'
 import { OWNERS, CUSTOMERS } from './helpers/accounts.js'
-import { bodyText, loginAsCustomer, loginAsOwner, unique } from './helpers/app.js'
+import { bodyText, loginAsCustomer, loginAsOwner, textEventually, unique } from './helpers/app.js'
 
 test.beforeAll(() => prepareDatabase())
 
@@ -12,11 +12,18 @@ test.describe('Owner payments', () => {
     await page.waitForLoadState('networkidle')
   })
 
-  test('lists only payments raised against this owner properties', async ({ page }) => {
+  test('lists the payments raised against this owner properties', async ({ page, request }) => {
+    const { apiLogin, apiGet } = await import('./helpers/api.js')
+    const token = await apiLogin(request, OWNERS.hassan.email)
+    const body = await (await apiGet(request, token, '/owner/payments')).json()
+
     const text = await bodyText(page)
-    expect(text).toContain('PAY-2026-0001')
-    expect(text).not.toContain('PAY-2026-0019')
-    expect(text).not.toContain('PAY-2026-0020')
+    expect(text).toContain('PAY-2026-')
+
+    // Every reference the API put on page one is rendered, and nothing else.
+    for (const payment of body.data) {
+      expect(text, `page one should show ${payment.reference}`).toContain(payment.reference)
+    }
   })
 
   /**
@@ -73,9 +80,12 @@ test.describe('Owner payments', () => {
   })
 
   test('search narrows the list using the API', async ({ page }) => {
+    // PAY-2026-0001 is the oldest payment, so it sits past page one until the
+    // search reaches the API and brings it back on its own.
     await page.getByPlaceholder(/search by customer/i).fill('PAY-2026-0001')
-    await page.waitForTimeout(600)
-    expect(await bodyText(page)).toContain('PAY-2026-0001')
+
+    const text = await textEventually(page, (t) => t.includes('PAY-2026-0001'))
+    expect(text).toContain('PAY-2026-0001')
   })
 
   test('the table renders exactly the rows the paginated API returned', async ({ page, request }) => {
@@ -90,10 +100,11 @@ test.describe('Owner payments', () => {
     // One row per record on this page — no client-side slicing or padding.
     const rows = page.getByRole('row')
     await expect(rows).toHaveCount(body.data.length + 1) // + header row
+    expect(body.data.length).toBe(body.meta.per_page)
 
-    // A single page means no pagination control, which is correct.
-    expect(body.meta.last_page).toBe(1)
-    await expect(page.getByText(/showing page/i)).toHaveCount(0)
+    // The seeded payments run past one page, so the control has to be there.
+    expect(body.meta.last_page).toBeGreaterThan(1)
+    await expect(page.getByText(/showing page/i)).toBeVisible()
   })
 })
 
@@ -105,7 +116,8 @@ test.describe('Customer payments', () => {
 
     const text = await bodyText(page)
     expect(text).toMatch(/PAY-2026-000[1-6]/)
-    // Youssef's payments belong to Nadia's property.
+    // Same owner, different customer: Salma's and Youssef's rows must not
+    // reach Omar.
     expect(text).not.toContain('PAY-2026-0014')
     expect(text).not.toContain('PAY-2026-0019')
   })

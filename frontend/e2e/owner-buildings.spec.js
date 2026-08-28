@@ -10,23 +10,23 @@ test.describe('Owner buildings CRUD', () => {
     await loginAsOwner(page, OWNERS.hassan.email)
   })
 
-  test('lists only this owner buildings', async ({ page }) => {
+  test('lists the buildings across every property the owner holds', async ({ page }) => {
     await page.goto('/owner/buildings')
     await page.waitForLoadState('networkidle')
 
     const text = await bodyText(page)
     expect(text).toContain('Tower A')
     expect(text).toContain('Block 1')
-    expect(text).not.toContain('Marina Tower')
+    expect(text).toContain('Marina Tower')
   })
 
-  test('the property picker offers only this owner properties', async ({ page }) => {
+  test('the property picker offers this owner properties', async ({ page }) => {
     await page.goto('/owner/buildings/create')
     await page.waitForLoadState('networkidle')
 
-    const options = await page.getByLabel('Property').locator('option').allInnerTexts()
-    expect(options.join(' ')).toContain(PROPERTIES.nileView.name)
-    expect(options.join(' ')).not.toContain(PROPERTIES.marina.name)
+    const options = (await page.getByLabel('Property').locator('option').allInnerTexts()).join(' ')
+    expect(options).toContain(PROPERTIES.nileView.name)
+    expect(options).toContain(PROPERTIES.marina.name)
   })
 
   test('creates, edits and deletes a building', async ({ page }) => {
@@ -78,7 +78,12 @@ test.describe('Owner buildings CRUD', () => {
     await page.waitForLoadState('networkidle')
 
     // Tower A holds A-101, which the seeder puts under an active contract.
-    await page.getByRole('row', { name: /Tower A/ }).getByRole('button', { name: /^delete$/i }).click()
+    // Match on the name cell: "Marina Tower / Alexandria Marina Towers" also
+    // contains the substring "Tower A" once a row's cells are concatenated.
+    const towerA = page.getByRole('row').filter({
+      has: page.getByRole('cell', { name: 'Tower A', exact: true }),
+    })
+    await towerA.getByRole('button', { name: /^delete$/i }).click()
     await page.getByRole('button', { name: /delete building/i }).click()
 
     await expect(page.getByText(/still has units under contract|still has purchase requests/i).first()).toBeVisible()
