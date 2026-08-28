@@ -35,19 +35,23 @@ jobs:
         working-directory: backend
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      # The test suite runs against in-memory SQLite (see phpunit.xml), so no
-      # database service is needed. MySQL is only used by developers locally.
+      # .env.example points at MySQL because that is what developers run
+      # locally. CI has no MySQL service, so switch the copied .env over to a
+      # file-backed SQLite database. The test suite itself runs against
+      # in-memory SQLite (see phpunit.xml) and is unaffected by this.
       - name: Prepare environment
         working-directory: backend
         run: |
           cp .env.example .env
+          sed -i 's|^DB_CONNECTION=.*|DB_CONNECTION=sqlite|' .env
+          sed -i 's|^DB_DATABASE=.*|DB_DATABASE=database/database.sqlite|' .env
+          sed -i '/^DB_HOST=/d; /^DB_PORT=/d; /^DB_USERNAME=/d; /^DB_PASSWORD=/d' .env
+          touch database/database.sqlite
           php artisan key:generate
 
       - name: Verify migrations and seed data
         working-directory: backend
-        run: |
-          touch database/database.sqlite
-          php artisan migrate:fresh --seed --force
+        run: php artisan migrate:fresh --seed --force
 
       - name: Run tests
         working-directory: backend
