@@ -1,5 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+import { HERO_IMAGE } from '../../utils/propertyImagery'
 </script>
 
 <template>
@@ -10,7 +11,7 @@ import { RouterLink } from 'vue-router'
 
     <div class="hero-container">
       <!-- Left content -->
-      <div class="hero-content">
+      <div class="hero-content ps-fade-up">
         <div class="hero-badge">
           <span class="badge-dot"></span>
           Premium Real Estate Platform
@@ -53,199 +54,28 @@ import { RouterLink } from 'vue-router'
       </div>
 
       <!-- Right visual -->
-      <div class="hero-visual">
-        <div class="hero-illustration">
-          <svg viewBox="0 0 520 400" fill="none" xmlns="http://www.w3.org/2000/svg" class="hero-svg">
-            <!-- Sky gradient background -->
-            <defs>
-              <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#1A1A34"/>
-                <stop offset="60%" stop-color="#2A1A6E"/>
-                <stop offset="100%" stop-color="#3D279E"/>
-              </linearGradient>
-              <linearGradient id="buildingGrad1" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#4A2FC2"/>
-                <stop offset="100%" stop-color="#2A1A6E"/>
-              </linearGradient>
-              <linearGradient id="buildingGrad2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#5B3FE0"/>
-                <stop offset="100%" stop-color="#4A2FC2"/>
-              </linearGradient>
-              <linearGradient id="buildingGrad3" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#3D279E"/>
-                <stop offset="100%" stop-color="#191140"/>
-              </linearGradient>
-              <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#191140"/>
-                <stop offset="100%" stop-color="#0E0A22"/>
-              </linearGradient>
-              <linearGradient id="glowGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#5B3FE0" stop-opacity="0"/>
-                <stop offset="50%" stop-color="#5B3FE0" stop-opacity="0.3"/>
-                <stop offset="100%" stop-color="#5B3FE0" stop-opacity="0"/>
-              </linearGradient>
-              <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#FFE0A3" stop-opacity="0.6"/>
-                <stop offset="100%" stop-color="#FFE0A3" stop-opacity="0"/>
-              </radialGradient>
-              <filter id="blur">
-                <feGaussianBlur stdDeviation="3"/>
-              </filter>
-            </defs>
-
-            <!-- Sky -->
-            <rect width="520" height="400" fill="url(#skyGrad)" rx="20"/>
-
-            <!-- Stars -->
-            <circle cx="50" cy="30" r="1.2" fill="white" opacity="0.8"/>
-            <circle cx="130" cy="50" r="0.8" fill="white" opacity="0.6"/>
-            <circle cx="200" cy="20" r="1" fill="white" opacity="0.9"/>
-            <circle cx="300" cy="40" r="0.7" fill="white" opacity="0.5"/>
-            <circle cx="370" cy="25" r="1.2" fill="white" opacity="0.8"/>
-            <circle cx="450" cy="45" r="0.9" fill="white" opacity="0.7"/>
-            <circle cx="490" cy="15" r="0.6" fill="white" opacity="0.6"/>
-            <circle cx="80" cy="65" r="0.7" fill="white" opacity="0.5"/>
-            <circle cx="420" cy="70" r="0.8" fill="white" opacity="0.6"/>
-
-            <!-- Moon glow -->
-            <ellipse cx="430" cy="55" rx="35" ry="35" fill="url(#moonGlow)"/>
-            <circle cx="430" cy="55" r="16" fill="#FFE9C2"/>
-            <circle cx="425" cy="50" r="12" fill="#FFFAED"/>
-
-            <!-- Ground -->
-            <rect x="0" y="320" width="520" height="80" fill="url(#groundGrad)" rx="0"/>
-
-            <!-- Ambient glow on ground -->
-            <ellipse cx="260" cy="325" rx="260" ry="18" fill="url(#glowGrad)"/>
-
-            <!-- Building 4 (far left, small) -->
-            <rect x="20" y="200" width="55" height="125" fill="url(#buildingGrad3)" rx="4"/>
-            <rect x="28" y="210" width="8" height="10" fill="#47BFFF" opacity="0.5" rx="1"/>
-            <rect x="40" y="210" width="8" height="10" fill="#FFD700" opacity="0.4" rx="1"/>
-            <rect x="52" y="210" width="8" height="10" fill="#47BFFF" opacity="0.3" rx="1"/>
-            <rect x="28" y="228" width="8" height="10" fill="#FFD700" opacity="0.5" rx="1"/>
-            <rect x="52" y="228" width="8" height="10" fill="#5B3FE0" opacity="0.6" rx="1"/>
-            <rect x="28" y="246" width="8" height="10" fill="#47BFFF" opacity="0.4" rx="1"/>
-            <rect x="40" y="246" width="8" height="10" fill="#5B3FE0" opacity="0.5" rx="1"/>
-
-            <!-- Building 5 (far right, small) -->
-            <rect x="440" y="230" width="65" height="95" fill="url(#buildingGrad3)" rx="4"/>
-            <rect x="450" y="240" width="9" height="11" fill="#47BFFF" opacity="0.5" rx="1"/>
-            <rect x="464" y="240" width="9" height="11" fill="#FFD700" opacity="0.4" rx="1"/>
-            <rect x="478" y="240" width="9" height="11" fill="#47BFFF" opacity="0.3" rx="1"/>
-            <rect x="450" y="258" width="9" height="11" fill="#5B3FE0" opacity="0.6" rx="1"/>
-            <rect x="478" y="258" width="9" height="11" fill="#FFD700" opacity="0.5" rx="1"/>
-
-            <!-- Building 2 (left mid) -->
-            <rect x="65" y="145" width="80" height="180" fill="url(#buildingGrad1)" rx="5"/>
-            <!-- Windows grid -->
-            <rect x="76" y="158" width="12" height="14" fill="#47BFFF" opacity="0.6" rx="2"/>
-            <rect x="94" y="158" width="12" height="14" fill="#FFD700" opacity="0.5" rx="2"/>
-            <rect x="112" y="158" width="12" height="14" fill="#47BFFF" opacity="0.4" rx="2"/>
-            <rect x="130" y="158" width="12" height="14" fill="#5B3FE0" opacity="0.7" rx="2"/>
-            <rect x="76" y="180" width="12" height="14" fill="#5B3FE0" opacity="0.5" rx="2"/>
-            <rect x="94" y="180" width="12" height="14" fill="#47BFFF" opacity="0.6" rx="2"/>
-            <rect x="112" y="180" width="12" height="14" fill="#FFD700" opacity="0.6" rx="2"/>
-            <rect x="130" y="180" width="12" height="14" fill="#47BFFF" opacity="0.4" rx="2"/>
-            <rect x="76" y="202" width="12" height="14" fill="#FFD700" opacity="0.4" rx="2"/>
-            <rect x="112" y="202" width="12" height="14" fill="#5B3FE0" opacity="0.6" rx="2"/>
-            <rect x="76" y="224" width="12" height="14" fill="#47BFFF" opacity="0.5" rx="2"/>
-            <rect x="94" y="224" width="12" height="14" fill="#5B3FE0" opacity="0.4" rx="2"/>
-            <rect x="130" y="224" width="12" height="14" fill="#FFD700" opacity="0.5" rx="2"/>
-            <!-- Door -->
-            <rect x="95" y="290" width="20" height="35" fill="#5B3FE0" opacity="0.4" rx="3"/>
-
-            <!-- Building 3 (right mid) -->
-            <rect x="365" y="155" width="85" height="170" fill="url(#buildingGrad1)" rx="5"/>
-            <rect x="375" y="168" width="12" height="14" fill="#FFD700" opacity="0.6" rx="2"/>
-            <rect x="393" y="168" width="12" height="14" fill="#47BFFF" opacity="0.5" rx="2"/>
-            <rect x="411" y="168" width="12" height="14" fill="#5B3FE0" opacity="0.6" rx="2"/>
-            <rect x="429" y="168" width="12" height="14" fill="#47BFFF" opacity="0.4" rx="2"/>
-            <rect x="375" y="190" width="12" height="14" fill="#47BFFF" opacity="0.5" rx="2"/>
-            <rect x="411" y="190" width="12" height="14" fill="#FFD700" opacity="0.6" rx="2"/>
-            <rect x="429" y="190" width="12" height="14" fill="#5B3FE0" opacity="0.5" rx="2"/>
-            <rect x="375" y="212" width="12" height="14" fill="#5B3FE0" opacity="0.7" rx="2"/>
-            <rect x="393" y="212" width="12" height="14" fill="#FFD700" opacity="0.4" rx="2"/>
-            <rect x="429" y="212" width="12" height="14" fill="#47BFFF" opacity="0.6" rx="2"/>
-            <rect x="393" y="234" width="12" height="14" fill="#47BFFF" opacity="0.5" rx="2"/>
-            <rect x="411" y="234" width="12" height="14" fill="#5B3FE0" opacity="0.4" rx="2"/>
-            <!-- Door -->
-            <rect x="397" y="289" width="20" height="36" fill="#5B3FE0" opacity="0.4" rx="3"/>
-
-            <!-- Main Center Building (tallest) -->
-            <rect x="150" y="90" width="220" height="235" fill="url(#buildingGrad2)" rx="8"/>
-            <!-- Roof detail -->
-            <rect x="165" y="82" width="190" height="15" fill="#7A57EC" rx="4"/>
-            <rect x="190" y="72" width="140" height="15" fill="#5B3FE0" rx="4"/>
-            <!-- Window grid - main building (more bright) -->
-            <rect x="165" y="108" width="18" height="20" fill="#fff" opacity="0.15" rx="2"/>
-            <rect x="190" y="108" width="18" height="20" fill="#FFD700" opacity="0.7" rx="2"/>
-            <rect x="215" y="108" width="18" height="20" fill="#fff" opacity="0.2" rx="2"/>
-            <rect x="240" y="108" width="18" height="20" fill="#47BFFF" opacity="0.8" rx="2"/>
-            <rect x="265" y="108" width="18" height="20" fill="#fff" opacity="0.15" rx="2"/>
-            <rect x="290" y="108" width="18" height="20" fill="#FFD700" opacity="0.6" rx="2"/>
-            <rect x="315" y="108" width="18" height="20" fill="#fff" opacity="0.2" rx="2"/>
-            <rect x="340" y="108" width="18" height="20" fill="#47BFFF" opacity="0.5" rx="2"/>
-
-            <rect x="165" y="136" width="18" height="20" fill="#47BFFF" opacity="0.7" rx="2"/>
-            <rect x="190" y="136" width="18" height="20" fill="#fff" opacity="0.15" rx="2"/>
-            <rect x="215" y="136" width="18" height="20" fill="#FFD700" opacity="0.8" rx="2"/>
-            <rect x="240" y="136" width="18" height="20" fill="#fff" opacity="0.2" rx="2"/>
-            <rect x="265" y="136" width="18" height="20" fill="#5B3FE0" opacity="0.9" rx="2"/>
-            <rect x="290" y="136" width="18" height="20" fill="#47BFFF" opacity="0.6" rx="2"/>
-            <rect x="315" y="136" width="18" height="20" fill="#FFD700" opacity="0.7" rx="2"/>
-            <rect x="340" y="136" width="18" height="20" fill="#fff" opacity="0.2" rx="2"/>
-
-            <rect x="165" y="164" width="18" height="20" fill="#FFD700" opacity="0.6" rx="2"/>
-            <rect x="215" y="164" width="18" height="20" fill="#47BFFF" opacity="0.7" rx="2"/>
-            <rect x="240" y="164" width="18" height="20" fill="#5B3FE0" opacity="0.8" rx="2"/>
-            <rect x="290" y="164" width="18" height="20" fill="#fff" opacity="0.2" rx="2"/>
-            <rect x="315" y="164" width="18" height="20" fill="#FFD700" opacity="0.5" rx="2"/>
-            <rect x="340" y="164" width="18" height="20" fill="#47BFFF" opacity="0.6" rx="2"/>
-
-            <rect x="165" y="192" width="18" height="20" fill="#47BFFF" opacity="0.5" rx="2"/>
-            <rect x="190" y="192" width="18" height="20" fill="#5B3FE0" opacity="0.7" rx="2"/>
-            <rect x="240" y="192" width="18" height="20" fill="#FFD700" opacity="0.6" rx="2"/>
-            <rect x="265" y="192" width="18" height="20" fill="#47BFFF" opacity="0.4" rx="2"/>
-            <rect x="315" y="192" width="18" height="20" fill="#5B3FE0" opacity="0.6" rx="2"/>
-            <rect x="340" y="192" width="18" height="20" fill="#FFD700" opacity="0.5" rx="2"/>
-
-            <rect x="165" y="220" width="18" height="20" fill="#FFD700" opacity="0.5" rx="2"/>
-            <rect x="215" y="220" width="18" height="20" fill="#47BFFF" opacity="0.6" rx="2"/>
-            <rect x="265" y="220" width="18" height="20" fill="#5B3FE0" opacity="0.7" rx="2"/>
-            <rect x="290" y="220" width="18" height="20" fill="#FFD700" opacity="0.4" rx="2"/>
-            <rect x="340" y="220" width="18" height="20" fill="#47BFFF" opacity="0.5" rx="2"/>
-
-            <!-- Main entrance -->
-            <rect x="230" y="265" width="60" height="60" fill="#2A1A6E" rx="5"/>
-            <rect x="237" y="265" width="23" height="55" fill="#5B3FE0" opacity="0.35" rx="3"/>
-            <rect x="260" y="265" width="23" height="55" fill="#47BFFF" opacity="0.2" rx="3"/>
-
-            <!-- Ground light effects -->
-            <ellipse cx="260" cy="322" rx="80" ry="8" fill="#5B3FE0" opacity="0.2" filter="url(#blur)"/>
-            <ellipse cx="110" cy="322" rx="45" ry="5" fill="#47BFFF" opacity="0.15" filter="url(#blur)"/>
-            <ellipse cx="408" cy="322" rx="45" ry="5" fill="#47BFFF" opacity="0.15" filter="url(#blur)"/>
-
-            <!-- Road lines -->
-            <rect x="240" y="340" width="40" height="4" fill="#ffffff" opacity="0.08" rx="2"/>
-            <rect x="240" y="355" width="40" height="4" fill="#ffffff" opacity="0.08" rx="2"/>
-            <rect x="240" y="370" width="40" height="4" fill="#ffffff" opacity="0.08" rx="2"/>
-
-            <!-- Trees -->
-            <rect x="145" y="295" width="6" height="28" fill="#2A1A6E"/>
-            <ellipse cx="148" cy="290" rx="14" ry="18" fill="#1a3a2e" opacity="0.9"/>
-            <ellipse cx="148" cy="285" rx="10" ry="14" fill="#234d3d" opacity="0.8"/>
-
-            <rect x="367" y="295" width="6" height="28" fill="#2A1A6E"/>
-            <ellipse cx="370" cy="290" rx="14" ry="18" fill="#1a3a2e" opacity="0.9"/>
-            <ellipse cx="370" cy="285" rx="10" ry="14" fill="#234d3d" opacity="0.8"/>
-          </svg>
-        </div>
+      <!-- Right visual: a real architectural photograph rather than an
+           illustration, so the page reads as a property platform. -->
+      <div class="hero-visual ps-fade-in" style="animation-delay: .12s;">
+        <figure class="hero-frame">
+          <img
+            class="hero-photo"
+            :src="HERO_IMAGE"
+            alt="Contemporary two-storey villa lit at dusk, seen from its garden"
+            width="1600"
+            height="1067"
+            fetchpriority="high"
+            decoding="async"
+          />
+          <figcaption class="hero-caption">
+            <span class="hero-caption-label">Now listing</span>
+            <span class="hero-caption-text">Villas, apartments and compounds across Egypt</span>
+          </figcaption>
+        </figure>
       </div>
     </div>
   </section>
 </template>
-
 <style scoped>
 .hero-section {
   position: relative;
@@ -429,18 +259,49 @@ import { RouterLink } from 'vue-router'
   align-items: center;
 }
 
-.hero-illustration {
+.hero-frame {
+  position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
+  margin: 0;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 24px 80px rgba(26, 26, 62, 0.3), 0 4px 20px rgba(91, 63, 224, 0.2);
+  box-shadow: 0 24px 80px rgba(26, 26, 62, 0.34), 0 4px 20px rgba(91, 63, 224, 0.18);
 }
 
-.hero-svg {
+.hero-photo {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.hero-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 2.5rem 1.25rem 1.1rem;
+  background: linear-gradient(to top, rgba(14, 12, 30, 0.82), rgba(14, 12, 30, 0));
+  color: #fff;
+  text-align: left;
+}
+
+.hero-caption-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c9b8ff;
+}
+
+.hero-caption-text {
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 /* Responsive */

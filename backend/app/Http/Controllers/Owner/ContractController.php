@@ -8,8 +8,10 @@ use App\Models\Contract;
 use App\Models\PurchaseRequest;
 use App\Models\User;
 use App\Models\Unit;
+use App\Notifications\ContractNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class ContractController extends Controller
@@ -26,7 +28,7 @@ class ContractController extends Controller
                 'unit.building.property',
                 'payments',
             ])
-            ->latest()
+            ->orderBy('id')
             ->paginate($request->integer('per_page', 15));
 
         return ContractResource::collection($contracts)->response();
@@ -87,6 +89,10 @@ class ContractController extends Controller
             'payments',
         ]);
 
+        // The customer is told about their own lease: they cannot see the
+        // owner create it any other way.
+        $customer->notify(ContractNotification::created($contract));
+
         return (new ContractResource($contract))
             ->response()
             ->setStatusCode(201);
@@ -124,34 +130,66 @@ class ContractController extends Controller
             'notes'             => ['nullable', 'string'],
         ]);
 
-        if (isset($validated['user_id'])) {
-            $customer = User::findOrFail($validated['user_id']);
+        $customer = isset($validated['user_id'])
+            ? User::findOrFail($validated['user_id'])
+            : null;
 
-            if ($customer->role !== 'customer') {
-                return response()->json([
-                    'message' => 'The selected customer is invalid.',
-                ], 422);
-            }
+        if ($customer && $customer->role !== 'customer') {
+            return response()->json([
+                'message' => 'The selected customer is invalid.',
+            ], 422);
         }
 
+        $movingUnit = isset($validated['unit_id'])
+            && (int) $validated['unit_id'] !== $contract->unit_id;
+
+        $previousUnit = $movingUnit ? $contract->unit : null;
+        $targetUnit = null;
+
         if (isset($validated['unit_id'])) {
-            $unit = Unit::with('building.property')
+            $targetUnit = Unit::with('building.property')
                 ->findOrFail($validated['unit_id']);
 
-            if ($unit->building->property->owner_id !== $request->user()->id) {
+            if ($targetUnit->building->property->owner_id !== $request->user()->id) {
                 return response()->json([
                     'message' => 'You are not authorized to use this unit.',
                 ], 403);
             }
         }
 
-        $contract->update($validated);
+        // Moving a contract onto a different unit has to clear the same bar as
+        // writing a new one, or an edit would be a way to let a unit that is
+        // already taken. Staying on the same unit is always fine.
+        if ($movingUnit) {
+            // Whoever will hold the lease once this update lands.
+            if (! $this->unitIsLettableTo($targetUnit, $customer ?? $contract->user)) {
+                return response()->json([
+                    'message' => 'This unit is not available.',
+                ], 422);
+            }
+        }
+
+        DB::transaction(function () use ($contract, $validated, $movingUnit, $previousUnit, $targetUnit) {
+            $contract->update($validated);
+
+            if (! $movingUnit) {
+                return;
+            }
+
+            $targetUnit->update(['status' => 'occupied']);
+
+            // The unit it came from is only free again if nothing else still
+            // holds it — a unit can carry more than one contract over time.
+            $this->releaseUnit($previousUnit, $contract->id);
+        });
 
         $contract->load([
             'user',
             'unit.building.property',
             'payments',
         ]);
+
+        $contract->user?->notify(ContractNotification::updated($contract));
 
         return (new ContractResource($contract))->response();
     }
@@ -173,15 +211,46 @@ class ContractController extends Controller
 
         $unit = $contract->unit;
 
-        $contract->delete();
+        // Captured before the row goes: the notification describes a record
+        // that will no longer exist.
+        $customer = $contract->user;
+        $contractId = $contract->id;
+        $unitNumber = $unit?->unit_number;
 
-        if ($unit && $unit->status === 'occupied') {
-            $unit->update([
-                'status' => 'available',
-            ]);
-        }
+        DB::transaction(function () use ($contract, $unit) {
+            $contract->delete();
+
+            $this->releaseUnit($unit, $contract->id);
+        });
+
+        $customer?->notify(ContractNotification::deleted($contractId, $unitNumber));
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Hand an occupied unit back to the pool, unless another live contract
+     * still holds it.
+     *
+     * A unit accumulates contracts over time — the seeded B-102 has an
+     * expired one behind its active one — so "this contract is gone" is not
+     * on its own a reason to advertise the unit as free.
+     */
+    private function releaseUnit(?Unit $unit, int $excludingContractId): void
+    {
+        if (! $unit || $unit->status !== 'occupied') {
+            return;
+        }
+
+        $stillLet = Contract::query()
+            ->where('unit_id', $unit->id)
+            ->where('id', '!=', $excludingContractId)
+            ->where('status', 'active')
+            ->exists();
+
+        if (! $stillLet) {
+            $unit->update(['status' => 'available']);
+        }
     }
 
     /**

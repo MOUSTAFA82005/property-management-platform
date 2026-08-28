@@ -5,6 +5,7 @@ import { usePaymentsStore } from '../../../stores/payments'
 import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
 import StatusBadge from '../../../components/owner/StatusBadge.vue'
 import EmptyState from '../../../components/ui/EmptyState.vue'
+import { formatDate, formatMoney } from '../../../utils/format'
 
 const route = useRoute()
 const paymentsStore = usePaymentsStore()
@@ -12,18 +13,7 @@ const paymentsStore = usePaymentsStore()
 const loading = ref(true)
 const error = ref(null)
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function formatCurrency(amount) {
-  if (amount == null || isNaN(amount)) return '—'
-  const num = Number(amount)
-  return 'EGP ' + num.toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
+const formatCurrency = (amount) => formatMoney(amount, { withDecimals: true })
 
 const METHOD_LABELS = {
   cash: 'Cash',

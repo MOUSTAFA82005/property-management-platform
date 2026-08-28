@@ -123,6 +123,16 @@ const routes = [
         component: () => import('../views/owner/Contracts/Create.vue'),
       },
       {
+        path: 'contracts/:id/edit',
+        name: 'owner.contracts.edit',
+        component: () => import('../views/owner/Contracts/Edit.vue'),
+      },
+      {
+        path: 'notifications',
+        name: 'owner.notifications',
+        component: () => import('../views/NotificationsView.vue'),
+      },
+      {
         path: 'contracts/:id',
         name: 'owner.contracts.show',
         component: () => import('../views/owner/Contracts/Show.vue'),
@@ -183,6 +193,12 @@ const routes = [
       },
 
       // Private customer-only routes — require auth AND customer role
+      {
+        path: 'notifications',
+        name: 'customer.notifications',
+        meta: { requiresCustomer: true },
+        component: () => import('../views/NotificationsView.vue'),
+      },
       {
         path: 'purchase-requests',
         name: 'customer.purchase-requests.index',

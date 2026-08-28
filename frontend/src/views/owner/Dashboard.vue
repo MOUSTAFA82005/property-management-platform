@@ -90,7 +90,7 @@ onMounted(() => {
   <template v-else-if="s">
     <h2 class="owner-section-label">Portfolio</h2>
 
-    <div class="owner-stats owner-stats-5">
+    <div class="owner-stats owner-stats-5 ps-stagger">
       <StatCard
         v-for="card in portfolioCards"
         :key="card.label"
@@ -104,7 +104,7 @@ onMounted(() => {
 
     <h2 class="owner-section-label">Money</h2>
 
-    <div class="owner-stats owner-stats-3">
+    <div class="owner-stats owner-stats-3 ps-stagger">
       <StatCard
         v-for="card in financeCards"
         :key="card.label"

@@ -8,20 +8,6 @@ import { formatMoney } from '../../utils/format'
 const store = usePropertiesStore()
 
 /**
- * Card artwork only — the skyline illustration needs a colour set per card.
- * This is decoration, not business data, so it cycles independently of what
- * the API returns.
- */
-const PALETTE = [
-  { gradient: 'linear-gradient(145deg, #1A1A34, #2A1A6E)', colorDark: '#1A1A34', colorDarker: '#0E0A22', colorGlow: 'rgba(91, 63, 224, 0.25)' },
-  { gradient: 'linear-gradient(145deg, #0f2744, #1a3a6e)', colorDark: '#0f2744', colorDarker: '#071528', colorGlow: 'rgba(71, 191, 255, 0.25)' },
-  { gradient: 'linear-gradient(145deg, #1a2e1a, #2d4a2d)', colorDark: '#1a2e1a', colorDarker: '#0d1a0d', colorGlow: 'rgba(60, 180, 100, 0.2)' },
-  { gradient: 'linear-gradient(145deg, #2e1a1a, #4a1a2d)', colorDark: '#2e1a1a', colorDarker: '#1a0d14', colorGlow: 'rgba(220, 80, 120, 0.2)' },
-  { gradient: 'linear-gradient(145deg, #1a2a3e, #0f3a4a)', colorDark: '#1a2a3e', colorDarker: '#0d1a26', colorGlow: 'rgba(30, 160, 210, 0.25)' },
-  { gradient: 'linear-gradient(145deg, #1e1a2e, #2e1a4a)', colorDark: '#1e1a2e', colorDarker: '#100d1e', colorGlow: 'rgba(91, 63, 224, 0.2)' },
-]
-
-/**
  * The card shows bed/bath/area figures, which live on units rather than on
  * the property. Use the cheapest available unit — the one `from_price`
  * refers to — so the headline figure and the specs describe the same unit.
@@ -39,7 +25,7 @@ function representativeUnit(property) {
 }
 
 const featuredProperties = computed(() =>
-  store.properties.map((property, index) => {
+  store.properties.map((property) => {
     const unit = representativeUnit(property)
 
     return {
@@ -51,7 +37,6 @@ const featuredProperties = computed(() =>
       bedrooms: unit?.bedrooms ?? 0,
       bathrooms: unit?.bathrooms ?? 0,
       area: unit?.area ? Math.round(Number(unit.area)) : '—',
-      ...PALETTE[index % PALETTE.length],
     }
   }),
 )

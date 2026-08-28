@@ -7,6 +7,7 @@ use App\Http\Requests\Customer\StorePurchaseRequestRequest;
 use App\Http\Resources\PurchaseRequestResource;
 use App\Models\PurchaseRequest;
 use App\Models\Unit;
+use App\Notifications\PurchaseRequestNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,12 @@ class PurchaseRequestController extends Controller
 
         $purchaseRequest->load('unit.building.property');
 
+        // The other direction: the owner of the unit is the one who has to
+        // act on this, so they are the one told.
+        $purchaseRequest->unit?->building?->property?->owner?->notify(
+            PurchaseRequestNotification::submitted($purchaseRequest, $request->user()->name),
+        );
+
         return (new PurchaseRequestResource($purchaseRequest))->response()->setStatusCode(201);
     }
 
@@ -91,7 +98,7 @@ class PurchaseRequestController extends Controller
      * Cancelling an approved request releases the reservation it created,
      * otherwise the unit would stay reserved for a request nobody holds.
      */
-    public function destroy(PurchaseRequest $purchaseRequest): JsonResponse
+    public function destroy(Request $request, PurchaseRequest $purchaseRequest): JsonResponse
     {
         Gate::authorize('delete', $purchaseRequest);
 
@@ -128,6 +135,10 @@ class PurchaseRequestController extends Controller
         });
 
         $purchaseRequest->load('unit.building.property');
+
+        $purchaseRequest->unit?->building?->property?->owner?->notify(
+            PurchaseRequestNotification::cancelled($purchaseRequest, $request->user()->name),
+        );
 
         return (new PurchaseRequestResource($purchaseRequest->fresh()))->response();
     }

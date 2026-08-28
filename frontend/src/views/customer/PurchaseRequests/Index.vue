@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { usePurchaseRequestsStore } from '../../../stores/purchaseRequests'
 import CustomerDashboardLayout from '../../../components/customer/CustomerDashboardLayout.vue'
+import { formatDate, statusBadgeClass } from '../../../utils/format'
 
 const store = usePurchaseRequestsStore()
 
@@ -10,19 +11,7 @@ onMounted(async () => {
   await store.fetchCustomerPurchaseRequests()
 })
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function badgeClass(status) {
-  const s = (status || '').toLowerCase()
-  if (s === 'approved') return 'sk-badge-active'
-  if (s === 'pending')  return 'sk-badge-pending'
-  return 'sk-badge-rejected'
-}
+const badgeClass = (status) => statusBadgeClass(status)
 
 const pendingCount  = computed(() => store.purchaseRequests.filter((r) => (r.status || '').toLowerCase() === 'pending').length)
 const approvedCount = computed(() => store.purchaseRequests.filter((r) => (r.status || '').toLowerCase() === 'approved').length)

@@ -1,32 +1,16 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
 import StatusBadge from '../../../components/owner/StatusBadge.vue'
-import api from '../../../services/api'
+import { useCustomersStore } from '../../../stores/customers'
 
-const customers = ref([])
-const loading = ref(true)
-const error = ref('')
+const store = useCustomersStore()
 
+const customers = computed(() => store.customers)
 const customerCount = computed(() => customers.value.length)
 
-const getCustomers = async () => {
-  try {
-    loading.value = true
-    error.value = ''
-
-    const response = await api.get('/owner/customers')
-
-    customers.value = response.data?.data || []
-  } catch (err) {
-    console.error(err)
-    error.value =
-      err.response?.data?.message || 'Failed to load customers.'
-  } finally {
-    loading.value = false
-  }
-}
+const getCustomers = () => store.fetchCustomers().catch(() => {})
 
 const getCustomerStatus = (customer) => {
   return customer.status
@@ -48,11 +32,6 @@ onMounted(() => {
 
     <div class="owner-card">
       <div class="owner-card-head">
-        <input
-          class="owner-search"
-          placeholder="Search customers..."
-        />
-
         <span>
           {{ customerCount }}
           {{ customerCount === 1 ? 'customer' : 'customers' }}
@@ -60,13 +39,13 @@ onMounted(() => {
       </div>
 
       <!-- Loading -->
-      <div v-if="loading" class="owner-form">
+      <div v-if="store.loading" class="owner-form">
         <p>Loading customers...</p>
       </div>
 
       <!-- Error -->
-      <div v-else-if="error" class="owner-form">
-        <p>{{ error }}</p>
+      <div v-else-if="store.error" class="owner-form">
+        <p>{{ store.error }}</p>
       </div>
 
       <!-- Customers -->

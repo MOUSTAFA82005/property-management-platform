@@ -8,6 +8,7 @@ use App\Http\Requests\Owner\UpdatePaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Contract;
 use App\Models\Payment;
+use App\Notifications\PaymentNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -34,6 +35,7 @@ class PaymentController extends Controller
                     ->orWhereHas('contract.unit', fn ($u) => $u->where('unit_number', 'like', $term)));
             })
             ->latest('due_date')
+            ->orderBy('id')
             ->paginate($request->integer('per_page', 15));
 
         return PaymentResource::collection($payments)->response();
@@ -52,6 +54,9 @@ class PaymentController extends Controller
         $payment = Payment::create($request->validated());
 
         $payment->load(['contract.user', 'contract.unit']);
+
+        // The customer on the contract owes or has been credited this money.
+        $payment->contract?->user?->notify(PaymentNotification::recorded($payment));
 
         return (new PaymentResource($payment))->response()->setStatusCode(201);
     }
@@ -77,9 +82,17 @@ class PaymentController extends Controller
             Gate::authorize('update', Contract::findOrFail($request->validated('contract_id')));
         }
 
+        $statusBefore = $payment->status;
+
         $payment->update($request->validated());
 
         $payment->load(['contract.user', 'contract.unit']);
+
+        // Only a real status transition is worth interrupting someone for;
+        // correcting a typo in the notes is not.
+        if ($payment->status !== $statusBefore) {
+            $payment->contract?->user?->notify(PaymentNotification::updated($payment));
+        }
 
         return (new PaymentResource($payment))->response();
     }

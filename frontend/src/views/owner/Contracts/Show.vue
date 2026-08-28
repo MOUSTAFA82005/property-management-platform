@@ -1,49 +1,54 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
 import StatusBadge from '../../../components/owner/StatusBadge.vue'
-import api from '../../../services/api'
+import { useContractsStore } from '../../../stores/contracts'
+import { formatDate, formatMoney as money } from '../../../utils/format'
 
 const route = useRoute()
+const router = useRouter()
+const contractsStore = useContractsStore()
 
 const contract = ref(null)
 const loading = ref(true)
 const error = ref(null)
+
+const confirmDelete = ref(false)
+const deleting = ref(false)
+const actionError = ref('')
+
+// Contract money is shown to the cent on the detail page.
+const formatMoney = (amount) => money(amount, { withDecimals: true })
 
 const getContract = async () => {
   loading.value = true
   error.value = null
 
   try {
-    const response = await api.get(`/owner/contracts/${route.params.id}`)
-    contract.value = response.data?.data || response.data
+    contract.value = await contractsStore.fetchOwnerContract(route.params.id)
   } catch (err) {
-    console.error(err)
-    error.value =
-      err.response?.data?.message || 'Failed to load contract.'
+    error.value = err.response?.data?.message || 'Failed to load contract.'
   } finally {
     loading.value = false
   }
 }
 
-const formatDate = (date) => {
-  if (!date) return '-'
+const remove = async () => {
+  deleting.value = true
+  actionError.value = ''
 
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-  })
-}
-
-const formatMoney = (amount) => {
-  if (amount === null || amount === undefined) return 'EGP 0'
-
-  return `EGP ${Number(amount).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
+  try {
+    await contractsStore.removeContract(contract.value.id)
+    router.push('/owner/contracts')
+  } catch (err) {
+    // A contract with payments is refused with a 409 and an explanation.
+    actionError.value =
+      err.response?.data?.message || 'Could not delete this contract.'
+    confirmDelete.value = false
+  } finally {
+    deleting.value = false
+  }
 }
 
 onMounted(() => {
@@ -61,7 +66,21 @@ onMounted(() => {
     <OwnerPageHeader
       :title="contract ? `Contract CTR-${String(contract.id).padStart(4, '0')}` : 'Contract Details'"
       subtitle="Signed agreement details and payment schedule."
-    />
+    >
+      <template v-if="contract" #actions>
+        <RouterLink
+          :to="`/owner/contracts/${contract.id}/edit`"
+          class="owner-btn owner-btn-light"
+        >
+          Edit
+        </RouterLink>
+        <button class="owner-btn owner-btn-danger" @click="confirmDelete = true">
+          Delete
+        </button>
+      </template>
+    </OwnerPageHeader>
+
+    <div v-if="actionError" class="sk-alert-error">{{ actionError }}</div>
 
     <div v-if="loading" class="owner-card">
       <div class="owner-form">
@@ -219,5 +238,29 @@ onMounted(() => {
         </div>
       </div>
     </template>
+
+    <div
+      v-if="confirmDelete"
+      class="owner-modal-backdrop"
+      @click.self="confirmDelete = false"
+    >
+      <div class="owner-modal">
+        <h3>Delete this contract?</h3>
+        <p>
+          This lease for {{ contract?.user?.name ?? 'this customer' }} will be
+          removed and the unit released. Contracts with payments recorded
+          against them cannot be deleted.
+        </p>
+
+        <div class="owner-form-actions">
+          <button class="owner-btn owner-btn-danger" :disabled="deleting" @click="remove">
+            {{ deleting ? 'Deleting...' : 'Delete contract' }}
+          </button>
+          <button class="owner-btn owner-btn-light" @click="confirmDelete = false">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

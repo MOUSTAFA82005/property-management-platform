@@ -269,4 +269,251 @@ class OwnerContractTest extends TestCase
         $this->assertDatabaseMissing('contracts', ['id' => $contract->id]);
         $this->assertSame('available', $unit->fresh()->status);
     }
+
+    public function test_deleting_one_of_two_contracts_leaves_the_unit_let(): void
+    {
+        $owner    = User::factory()->owner()->create();
+        $past     = User::factory()->customer()->create();
+        $current  = User::factory()->customer()->create();
+        $unit     = $this->makeUnitFor($owner, '703');
+        $unit->update(['status' => 'occupied']);
+
+        // A unit accumulates contracts over time: an old one that ended, and
+        // the live one that explains why the unit is occupied today.
+        $ended = Contract::query()->create($this->contractPayload($past, $unit));
+        $ended->update(['status' => 'expired']);
+
+        Contract::query()->create($this->contractPayload($current, $unit));
+
+        Sanctum::actingAs($owner);
+
+        $this->deleteJson("/api/owner/contracts/{$ended->id}")->assertNoContent();
+
+        $this->assertSame('occupied', $unit->fresh()->status);
+    }
+
+    // =================================================================
+    // Editing
+    // =================================================================
+
+    public function test_owner_can_edit_their_own_contract(): void
+    {
+        $owner    = User::factory()->owner()->create();
+        $customer = User::factory()->customer()->create();
+        $unit     = $this->makeUnitFor($owner, '801');
+
+        $contract = Contract::query()->create($this->contractPayload($customer, $unit));
+
+        Sanctum::actingAs($owner);
+
+        $this->putJson("/api/owner/contracts/{$contract->id}", [
+            'monthly_rent' => 15500,
+            'status'       => 'terminated',
+            'notes'        => 'Renegotiated after the annual review.',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'terminated')
+            ->assertJsonPath('data.notes', 'Renegotiated after the annual review.');
+
+        $this->assertDatabaseHas('contracts', [
+            'id'     => $contract->id,
+            'status' => 'terminated',
+        ]);
+
+        $this->assertSame('15500.00', $contract->fresh()->monthly_rent);
+    }
+
+    public function test_an_edit_that_touches_nothing_else_leaves_the_unit_alone(): void
+    {
+        $owner    = User::factory()->owner()->create();
+        $customer = User::factory()->customer()->create();
+        $unit     = $this->makeUnitFor($owner, '802');
+        $unit->update(['status' => 'occupied']);
+
+        $contract = Contract::query()->create($this->contractPayload($customer, $unit));
+
+        Sanctum::actingAs($owner);
+
+        // Re-sending the same unit id must not be read as a move.
+        $this->putJson("/api/owner/contracts/{$contract->id}", [
+            'unit_id'      => $unit->id,
+            'monthly_rent' => 13000,
+        ])->assertOk();
+
+        $this->assertSame('occupied', $unit->fresh()->status);
+    }
+
+    public function test_moving_a_contract_to_another_unit_moves_the_occupancy(): void
+    {
+        $owner    = User::factory()->owner()->create();
+        $customer = User::factory()->customer()->create();
+        $from     = $this->makeUnitFor($owner, '803');
+        $to       = $this->makeUnitFor($owner, '804');
+
+        $from->update(['status' => 'occupied']);
+
+        $contract = Contract::query()->create($this->contractPayload($customer, $from));
+
+        Sanctum::actingAs($owner);
+
+        $this->putJson("/api/owner/contracts/{$contract->id}", ['unit_id' => $to->id])
+            ->assertOk()
+            ->assertJsonPath('data.unit_id', $to->id);
+
+        $this->assertSame('available', $from->fresh()->status);
+        $this->assertSame('occupied', $to->fresh()->status);
+    }
+
+    public function test_a_contract_cannot_be_moved_onto_an_occupied_unit(): void
+    {
+        $owner    = User::factory()->owner()->create();
+        $customer = User::factory()->customer()->create();
+        $mine     = $this->makeUnitFor($owner, '805');
+        $taken    = $this->makeUnitFor($owner, '806');
+
+        $taken->update(['status' => 'occupied']);
+
+        $contract = Contract::query()->create($this->contractPayload($customer, $mine));
+
+        Sanctum::actingAs($owner);
+
+        $this->putJson("/api/owner/contracts/{$contract->id}", ['unit_id' => $taken->id])
+            ->assertStatus(422);
+
+        $this->assertSame($mine->id, $contract->fresh()->unit_id);
+    }
+
+    public function test_owner_cannot_edit_another_owners_contract(): void
+    {
+        $owner      = User::factory()->owner()->create();
+        $otherOwner = User::factory()->owner()->create();
+        $customer   = User::factory()->customer()->create();
+
+        $foreignContract = Contract::query()->create(
+            $this->contractPayload($customer, $this->makeUnitFor($otherOwner, '807'))
+        );
+
+        Sanctum::actingAs($owner);
+
+        $this->putJson("/api/owner/contracts/{$foreignContract->id}", ['monthly_rent' => 1])
+            ->assertForbidden();
+
+        $this->assertSame('12000.00', $foreignContract->fresh()->monthly_rent);
+    }
+
+    public function test_owner_cannot_move_a_contract_onto_another_owners_unit(): void
+    {
+        $owner      = User::factory()->owner()->create();
+        $otherOwner = User::factory()->owner()->create();
+        $customer   = User::factory()->customer()->create();
+
+        $contract    = Contract::query()->create(
+            $this->contractPayload($customer, $this->makeUnitFor($owner, '808'))
+        );
+        $foreignUnit = $this->makeUnitFor($otherOwner, '809');
+
+        Sanctum::actingAs($owner);
+
+        $this->putJson("/api/owner/contracts/{$contract->id}", ['unit_id' => $foreignUnit->id])
+            ->assertForbidden();
+    }
+
+    public function test_owner_cannot_delete_another_owners_contract(): void
+    {
+        $owner      = User::factory()->owner()->create();
+        $otherOwner = User::factory()->owner()->create();
+        $customer   = User::factory()->customer()->create();
+
+        $foreignContract = Contract::query()->create(
+            $this->contractPayload($customer, $this->makeUnitFor($otherOwner, '810'))
+        );
+
+        Sanctum::actingAs($owner);
+
+        $this->deleteJson("/api/owner/contracts/{$foreignContract->id}")->assertForbidden();
+
+        $this->assertDatabaseHas('contracts', ['id' => $foreignContract->id]);
+    }
+
+    public function test_invalid_update_data_is_rejected_with_validation_errors(): void
+    {
+        $owner    = User::factory()->owner()->create();
+        $customer = User::factory()->customer()->create();
+        $unit     = $this->makeUnitFor($owner, '811');
+
+        $contract = Contract::query()->create($this->contractPayload($customer, $unit));
+
+        Sanctum::actingAs($owner);
+
+        $this->putJson("/api/owner/contracts/{$contract->id}", [
+            'monthly_rent' => -5,
+            'status'       => 'archived',
+            'end_date'     => 'not-a-date',
+            'unit_id'      => 999999,
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['monthly_rent', 'status', 'end_date', 'unit_id']);
+    }
+
+    public function test_a_contract_cannot_be_reassigned_to_an_owner_account(): void
+    {
+        $owner      = User::factory()->owner()->create();
+        $otherOwner = User::factory()->owner()->create();
+        $customer   = User::factory()->customer()->create();
+        $unit       = $this->makeUnitFor($owner, '812');
+
+        $contract = Contract::query()->create($this->contractPayload($customer, $unit));
+
+        Sanctum::actingAs($owner);
+
+        $this->putJson("/api/owner/contracts/{$contract->id}", ['user_id' => $otherOwner->id])
+            ->assertStatus(422);
+
+        $this->assertSame($customer->id, $contract->fresh()->user_id);
+    }
+
+    public function test_editing_or_deleting_a_contract_that_does_not_exist_returns_404(): void
+    {
+        Sanctum::actingAs(User::factory()->owner()->create());
+
+        $this->putJson('/api/owner/contracts/999999', ['monthly_rent' => 100])->assertNotFound();
+        $this->deleteJson('/api/owner/contracts/999999')->assertNotFound();
+    }
+
+    public function test_editing_and_deleting_require_authentication(): void
+    {
+        $owner    = User::factory()->owner()->create();
+        $customer = User::factory()->customer()->create();
+
+        $contract = Contract::query()->create(
+            $this->contractPayload($customer, $this->makeUnitFor($owner, '813'))
+        );
+
+        $this->putJson("/api/owner/contracts/{$contract->id}", ['monthly_rent' => 1])
+            ->assertUnauthorized();
+
+        $this->deleteJson("/api/owner/contracts/{$contract->id}")->assertUnauthorized();
+
+        $this->assertDatabaseHas('contracts', ['id' => $contract->id]);
+    }
+
+    public function test_a_customer_cannot_edit_or_delete_a_contract(): void
+    {
+        $owner    = User::factory()->owner()->create();
+        $customer = User::factory()->customer()->create();
+
+        $contract = Contract::query()->create(
+            $this->contractPayload($customer, $this->makeUnitFor($owner, '814'))
+        );
+
+        // Even their own contract: editing is the owner's job.
+        Sanctum::actingAs($customer);
+
+        $this->putJson("/api/owner/contracts/{$contract->id}", ['monthly_rent' => 1])
+            ->assertForbidden();
+
+        $this->deleteJson("/api/owner/contracts/{$contract->id}")->assertForbidden();
+
+        $this->assertDatabaseHas('contracts', ['id' => $contract->id]);
+    }
 }

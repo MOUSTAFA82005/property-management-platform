@@ -1,8 +1,13 @@
+// Bootstrap's stylesheet stays for its reset and base typography; the UI
+// itself is the project's own owner-*/sk-* system in the two files below.
+// Bootstrap's JS bundle is deliberately not imported — nothing uses a
+// data-bs-* component, and the menus and modals here are plain Vue state.
 import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import './style.css'
 import './style-skeleton.css'
+// Last, so its transition tokens and reduced-motion guard win.
+import './style-motion.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 

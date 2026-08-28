@@ -35,7 +35,7 @@ class UnitController extends Controller
                     ->where('unit_number', 'like', $term)
                     ->orWhere('unit_type', 'like', $term));
             })
-            ->latest()
+            ->orderBy('id')
             ->paginate($request->integer('per_page', 15));
 
         return UnitResource::collection($units)->response();

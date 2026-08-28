@@ -3,9 +3,11 @@ import { ref, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
 import StatusBadge from '../../../components/owner/StatusBadge.vue'
-import api from '../../../services/api'
+import { useCustomersStore } from '../../../stores/customers'
+import { formatDate, formatMoney as money } from '../../../utils/format'
 
 const route = useRoute()
+const store = useCustomersStore()
 
 const customer = ref(null)
 const loading = ref(true)
@@ -16,40 +18,16 @@ const getCustomer = async () => {
     loading.value = true
     error.value = ''
 
-    const response = await api.get(
-      `/owner/customers/${route.params.id}`
-    )
-
-    customer.value = response.data?.data || response.data
+    customer.value = await store.fetchCustomer(route.params.id)
   } catch (err) {
-    console.error(err)
-    error.value =
-      err.response?.data?.message || 'Failed to load customer.'
+    error.value = err.response?.data?.message || 'Failed to load customer.'
   } finally {
     loading.value = false
   }
 }
 
-const formatDate = (date) => {
-  if (!date) return '-'
-
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-  })
-}
-
-const formatMoney = (amount) => {
-  if (amount === null || amount === undefined) {
-    return 'EGP 0'
-  }
-
-  return `EGP ${Number(amount).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
-}
+// Contract and payment figures are shown to the cent on this page.
+const formatMoney = (amount) => money(amount, { withDecimals: true })
 
 const formatStatus = (status) => {
   if (!status) return 'Unknown'

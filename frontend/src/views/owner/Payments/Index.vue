@@ -4,6 +4,7 @@ import { usePaymentsStore } from '../../../stores/payments'
 import { useContractsStore } from '../../../stores/contracts'
 import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
 import EmptyState from '../../../components/ui/EmptyState.vue'
+import { formatDate, formatMoney, statusBadgeClass } from '../../../utils/format'
 
 const paymentsStore = usePaymentsStore()
 const contractsStore = useContractsStore()
@@ -46,28 +47,7 @@ const currentPageNum = computed(() => paymentsStore.meta?.current_page || 1)
 const totalItems = computed(() => paymentsStore.meta?.total || 0)
 
 // ── Helpers ────────────────────────────────────────
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function formatCurrency(amount) {
-  if (amount == null || isNaN(amount)) return '—'
-  const num = Number(amount)
-  return 'EGP ' + num.toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function statusBadgeClass(status) {
-  const map = {
-    pending: 'sk-badge-pending',
-    paid: 'sk-badge-paid',
-    overdue: 'sk-badge-overdue',
-    cancelled: 'sk-badge-rejected',
-  }
-  return map[status] || 'sk-badge-pending'
-}
+const formatCurrency = (amount) => formatMoney(amount, { withDecimals: true })
 
 const METHOD_LABELS = {
   cash: 'Cash',
@@ -93,6 +73,15 @@ function contractLabel(payment) {
 
 function unitLabel(payment) {
   return payment.contract?.unit?.unit_number || '—'
+}
+
+/**
+ * The payments endpoint loads `contract.unit` but not its building/property,
+ * so the property name is not available here without a backend change. The
+ * unit type is a column on units and is always present.
+ */
+function unitTypeLabel(payment) {
+  return payment.contract?.unit?.unit_type || '—'
 }
 
 // ── Actions ────────────────────────────────────────
@@ -304,36 +293,64 @@ onMounted(async () => {
 
     <!-- Data table -->
     <template v-else>
+      <!--
+        Seven columns instead of eleven. Nothing was dropped: the contract,
+        payment method and paid date now ride along under the field they
+        belong to, de-emphasised rather than given a column of their own.
+
+        The ARIA roles are explicit so the table keeps its row/cell semantics
+        when the stacked mobile layout changes `display` below 900px.
+      -->
       <div class="owner-table-wrap">
-        <table class="owner-table">
+        <table class="owner-table owner-table-stack" role="table">
           <thead>
-            <tr>
-              <th scope="col">Payment ID</th>
-              <th scope="col">Customer</th>
-              <th scope="col">Contract</th>
-              <th scope="col">Unit</th>
-              <th scope="col">Amount</th>
-              <th scope="col">Due Date</th>
-              <th scope="col">Paid Date</th>
-              <th scope="col">Payment Method</th>
-              <th scope="col">Status</th>
-              <th scope="col">Reference</th>
-              <th scope="col">Actions</th>
+            <tr role="row">
+              <th scope="col" role="columnheader">Reference</th>
+              <th scope="col" role="columnheader">Customer</th>
+              <th scope="col" role="columnheader">Unit</th>
+              <th scope="col" role="columnheader">Amount</th>
+              <th scope="col" role="columnheader">Due</th>
+              <th scope="col" role="columnheader">Status</th>
+              <th scope="col" role="columnheader">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="pay in filteredPayments" :key="pay.id">
-              <td><strong>PAY-{{ String(pay.id).padStart(4, '0') }}</strong></td>
-              <td>{{ customerName(pay) }}</td>
-              <td>{{ contractLabel(pay) }}</td>
-              <td>{{ unitLabel(pay) }}</td>
-              <td>{{ formatCurrency(pay.amount) }}</td>
-              <td>{{ formatDate(pay.due_date) }}</td>
-              <td>{{ formatDate(pay.paid_date) }}</td>
-              <td>{{ methodLabel(pay) }}</td>
-              <td><span class="sk-badge" :class="statusBadgeClass(pay.status)">{{ pay.status }}</span></td>
-              <td>{{ pay.reference || '—' }}</td>
-              <td>
+            <tr v-for="pay in filteredPayments" :key="pay.id" role="row">
+              <td role="cell" data-label="Reference">
+                <strong>{{ pay.reference || '—' }}</strong>
+                <span class="cell-sub">PAY-{{ String(pay.id).padStart(4, '0') }}</span>
+              </td>
+
+              <td role="cell" data-label="Customer">
+                {{ customerName(pay) }}
+                <span class="cell-sub">{{ contractLabel(pay) }}</span>
+              </td>
+
+              <td role="cell" data-label="Unit">
+                {{ unitLabel(pay) }}
+                <span class="cell-sub">{{ unitTypeLabel(pay) }}</span>
+              </td>
+
+              <td role="cell" data-label="Amount">
+                <span class="cell-amount">{{ formatCurrency(pay.amount) }}</span>
+                <span class="cell-sub">{{ methodLabel(pay) }}</span>
+              </td>
+
+              <td role="cell" data-label="Due">
+                {{ formatDate(pay.due_date) }}
+                <!-- Deliberately not the word "paid": the status badge in the
+                     next cell owns that word, and repeating it here makes a
+                     row match two elements when searching by status text. -->
+                <span class="cell-sub">
+                  {{ pay.paid_date ? `Received ${formatDate(pay.paid_date)}` : 'Awaiting' }}
+                </span>
+              </td>
+
+              <td role="cell" data-label="Status">
+                <span class="sk-badge" :class="statusBadgeClass(pay.status)">{{ pay.status }}</span>
+              </td>
+
+              <td role="cell" data-label="Actions" class="cell-actions">
                 <button class="owner-btn owner-btn-light" @click="openEditModal(pay)">Edit</button>
                 <button class="owner-btn owner-btn-danger" data-testid="payment-delete" @click="openDeleteModal(pay)">Delete</button>
               </td>

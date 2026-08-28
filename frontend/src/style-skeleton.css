@@ -396,6 +396,35 @@
 
 .sk-card-cta { width: 100%; margin-top: var(--sp-4); }
 
+/* ── Listing card refinements ────────────────────────────────────────
+   Location above the name, availability as a quiet stat line, and price
+   and CTA anchored to the bottom so a grid of cards lines up whatever the
+   name lengths are. */
+
+.sk-card-location {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--fs-xs);
+  font-weight: 550;
+  color: var(--muted-2);
+  margin-bottom: var(--sp-1);
+}
+
+.sk-card-location svg { color: var(--brand-500); flex-shrink: 0; }
+
+.sk-card-foot {
+  margin-top: auto;
+  padding-top: var(--sp-4);
+}
+
+.sk-card-foot .sk-card-price {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.sk-card-foot .sk-card-cta { margin-top: var(--sp-3); }
+
 .sk-card-meta {
   font-size: var(--fs-md);
   color: var(--muted);
@@ -538,6 +567,145 @@
   color: rgba(255, 255, 255, .85);
 }
 
+/* A row of filter buttons: same reasoning as .sk-row-actions below — the
+   buttons need an explicit gutter rather than relying on whitespace. */
+.sk-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+/* Buttons sitting together in a table cell need their own gutter —
+   inline-block elements only get a space when the markup happens to
+   leave one. */
+.sk-row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  /* No wrapping: the column claims the width it needs and .sk-table-wrap
+     scrolls if the table outgrows the viewport. Wrapping here stacked the
+     buttons instead of spacing them. */
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.sk-row-actions > .sk-btn { flex-shrink: 0; }
+
+/* ── Customer profile identity header ────────────────────────────── */
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-6);
+  margin-bottom: var(--sp-6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-xs);
+}
+
+.profile-hero-avatar {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  border-radius: var(--r-full);
+  display: grid;
+  place-items: center;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+.profile-hero-text { flex: 1; min-width: 0; }
+.profile-hero-text .dash-welcome { margin: 0; }
+.profile-hero-text .dash-subtitle { margin: 2px 0 0; overflow-wrap: anywhere; }
+
+.profile-hero-role {
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding: 3px var(--sp-3);
+  border-radius: var(--r-full);
+  background: var(--brand-50);
+  border: 1px solid var(--brand-edge);
+  color: var(--brand-700);
+  font-size: var(--fs-2xs);
+  font-weight: 650;
+  letter-spacing: .03em;
+}
+
+@media (max-width: 560px) {
+  .profile-hero { flex-wrap: wrap; padding: var(--sp-4); }
+}
+
+/* ── Listing hero ────────────────────────────────────────────────────
+   The photograph carries the page; the identity sits on a scrim over it. */
+
+.sk-hero {
+  position: relative;
+  margin-bottom: var(--sp-6);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+/* The wrapper owns the frame here, so the cover drops its own.
+   Three classes deep to out-specify the component's scoped rule. */
+.sk-detail .sk-hero .pcover-hero {
+  border: 0;
+  border-radius: 0;
+}
+
+.sk-hero-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--sp-10) var(--sp-6) var(--sp-5);
+  background: linear-gradient(to top, rgba(14, 12, 30, .88), rgba(14, 12, 30, .35) 55%, transparent);
+  color: #fff;
+}
+
+.sk-hero-type {
+  display: inline-block;
+  padding: 3px var(--sp-3);
+  margin-bottom: var(--sp-2);
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, .16);
+  border: 1px solid rgba(255, 255, 255, .24);
+  backdrop-filter: blur(6px);
+  font-size: var(--fs-2xs);
+  font-weight: 650;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.sk-hero-title {
+  margin: 0 0 var(--sp-1);
+  font-size: clamp(1.4rem, 3.4vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: -.025em;
+  line-height: var(--lh-tight);
+  color: #fff;
+}
+
+.sk-hero-loc {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: var(--fs-md);
+  color: rgba(255, 255, 255, .84);
+}
+
+.sk-hero-loc svg { flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .sk-hero-overlay { padding: var(--sp-8) var(--sp-4) var(--sp-4); }
+  .sk-detail .sk-hero .pcover-hero { aspect-ratio: 4 / 3; }
+}
+
 .sk-detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -556,7 +724,10 @@
   margin-bottom: 3px;
 }
 
-.sk-detail-item > span:not(.sk-detail-label),
+/* A badge in a detail slot keeps its own pill sizing: this rule would
+   otherwise make it `display: block` at heading size, stretching it across
+   the whole column. */
+.sk-detail-item > span:not(.sk-detail-label):not(.sk-badge),
 .sk-detail-value {
   display: block;
   font-size: var(--fs-lg);
@@ -564,6 +735,9 @@
   color: var(--ink);
   letter-spacing: -.01em;
 }
+
+/* Sits on its own line under the label, hugging its text. */
+.sk-detail-item > .sk-badge { margin-top: 2px; }
 
 /* ==========================================================================
    Pagination
@@ -736,15 +910,25 @@
   overflow: hidden;
 }
 
+/* The photograph sits under a brand-tinted scrim: it has to read as a
+   property without stealing contrast from the copy on top of it. */
+.auth-aside-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .34;
+  filter: saturate(.85);
+}
+
 .auth-aside::after {
   content: '';
   position: absolute;
-  width: 420px;
-  height: 420px;
-  right: -140px;
-  bottom: -160px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(155, 128, 245, .35), transparent 65%);
+  inset: 0;
+  background:
+    radial-gradient(circle at 88% 92%, rgba(155, 128, 245, .32), transparent 55%),
+    linear-gradient(150deg, rgba(27, 22, 56, .82) 0%, rgba(61, 39, 158, .74) 55%, rgba(43, 28, 107, .86) 100%);
   pointer-events: none;
 }
 

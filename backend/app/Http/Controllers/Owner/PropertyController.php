@@ -31,7 +31,7 @@ class PropertyController extends Controller
             })
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('is_published'), fn ($q) => $q->where('is_published', $request->boolean('is_published')))
-            ->latest()
+            ->orderBy('id')
             ->paginate($request->integer('per_page', 15));
 
         return PropertyResource::collection($properties)->response();

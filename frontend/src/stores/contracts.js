@@ -11,6 +11,7 @@ import {
   getCustomerContracts,
   getCustomerContract,
 } from '../services/contracts'
+import { extractItem, extractList } from '../services/pagination'
 
 export const useContractsStore = defineStore('contracts', () => {
   const contracts = ref([])
@@ -25,32 +26,6 @@ export const useContractsStore = defineStore('contracts', () => {
     error.value = null
   }
 
-  function extractData(response) {
-    const body = response.data
-
-    if (Array.isArray(body)) {
-      return {
-        data: body,
-        meta: null,
-        links: null,
-      }
-    }
-
-    if (body?.data && Array.isArray(body.data)) {
-      return {
-        data: body.data,
-        meta: body.meta || null,
-        links: body.links || null,
-      }
-    }
-
-    return {
-      data: body ? [body] : [],
-      meta: null,
-      links: null,
-    }
-  }
-
   // Owner actions
 
   async function fetchOwnerContracts(params = {}) {
@@ -59,7 +34,7 @@ export const useContractsStore = defineStore('contracts', () => {
 
     try {
       const res = await getOwnerContracts(params)
-      const extracted = extractData(res)
+      const extracted = extractList(res)
 
       contracts.value = extracted.data
       meta.value = extracted.meta
@@ -81,7 +56,7 @@ export const useContractsStore = defineStore('contracts', () => {
     try {
       const res = await getOwnerContract(id)
 
-      contract.value = res.data?.data || res.data
+      contract.value = extractItem(res)
 
       return contract.value
     } catch (e) {
@@ -99,7 +74,7 @@ export const useContractsStore = defineStore('contracts', () => {
     try {
       const res = await createOwnerContract(data)
 
-      const newContract = res.data?.data || res.data
+      const newContract = extractItem(res)
 
       contracts.value.unshift(newContract)
 
@@ -119,7 +94,7 @@ export const useContractsStore = defineStore('contracts', () => {
     try {
       const res = await updateOwnerContract(id, data)
 
-      const updatedContract = res.data?.data || res.data
+      const updatedContract = extractItem(res)
 
       const index = contracts.value.findIndex(
         (item) => item.id === id
@@ -131,7 +106,8 @@ export const useContractsStore = defineStore('contracts', () => {
 
       contract.value = updatedContract
 
-      return res.data
+      // Every other action returns the resource, not the envelope.
+      return updatedContract
     } catch (e) {
       error.value = e.response?.data?.message || e.message
       throw e
@@ -170,7 +146,7 @@ export const useContractsStore = defineStore('contracts', () => {
 
     try {
       const res = await getCustomerContracts(params)
-      const extracted = extractData(res)
+      const extracted = extractList(res)
 
       contracts.value = extracted.data
       meta.value = extracted.meta
@@ -192,7 +168,7 @@ export const useContractsStore = defineStore('contracts', () => {
     try {
       const res = await getCustomerContract(id)
 
-      contract.value = res.data?.data || res.data
+      contract.value = extractItem(res)
 
       return contract.value
     } catch (e) {

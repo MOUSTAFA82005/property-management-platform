@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { usePropertiesStore } from '../../../stores/properties'
+import PropertyCover from '../../../components/property/PropertyCover.vue'
 import { formatMoney } from '../../../utils/format'
 
 const store = usePropertiesStore()
@@ -38,7 +39,7 @@ onMounted(() => load())
 </script>
 
 <template>
-  <div class="sk-page">
+  <div class="sk-page ps-fade-up">
     <div class="sk-header">
       <h1>Properties</h1>
       <p>Browse our available properties and find your next home.</p>
@@ -56,7 +57,7 @@ onMounted(() => load())
     </div>
 
     <!-- Loading -->
-    <div v-if="store.loading" class="sk-cards" aria-busy="true">
+    <div v-if="store.loading" class="sk-cards ps-stagger" aria-busy="true">
       <div v-for="n in 6" :key="n" class="sk-card">
         <div class="sk-card-img"></div>
         <div class="sk-card-body">
@@ -83,27 +84,40 @@ onMounted(() => load())
 
     <!-- Results -->
     <template v-else>
-      <div class="sk-cards">
+      <div class="sk-cards ps-stagger">
         <article v-for="prop in store.properties" :key="prop.id" class="sk-card">
-          <div class="sk-card-img" aria-hidden="true">🏢</div>
+          <PropertyCover
+            :name="prop.name"
+            :type="prop.property_type"
+            :seed="prop.id"
+          />
 
           <div class="sk-card-body">
+            <p class="sk-card-location">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              {{ prop.city }}
+            </p>
+
             <h2 class="sk-card-title">{{ prop.name }}</h2>
-            <p class="sk-card-meta">{{ prop.city }} &bull; {{ prop.property_type }}</p>
 
             <p class="sk-card-availability">
               <strong>{{ prop.available_units_count }}</strong> of {{ prop.units_count }} units available
             </p>
 
-            <p class="sk-card-price">
-              <small>{{ prop.from_price ? 'Starting from' : 'Pricing' }}</small>
-              <template v-if="prop.from_price">{{ formatMoney(prop.from_price) }} / month</template>
-              <template v-else>On request</template>
-            </p>
+            <div class="sk-card-foot">
+              <p class="sk-card-price">
+                <small>{{ prop.from_price ? 'Starting from' : 'Pricing' }}</small>
+                <template v-if="prop.from_price">{{ formatMoney(prop.from_price) }} / month</template>
+                <template v-else>On request</template>
+              </p>
 
-            <RouterLink :to="`/properties/${prop.id}`" class="sk-btn sk-btn-primary sk-card-cta">
-              View Details
-            </RouterLink>
+              <RouterLink :to="`/properties/${prop.id}`" class="sk-btn sk-btn-primary sk-card-cta">
+                View Details
+              </RouterLink>
+            </div>
           </div>
         </article>
       </div>

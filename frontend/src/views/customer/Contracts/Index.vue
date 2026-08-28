@@ -3,31 +3,13 @@ import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useContractsStore } from '../../../stores/contracts'
 import CustomerDashboardLayout from '../../../components/customer/CustomerDashboardLayout.vue'
+import { formatDate, statusBadgeClass } from '../../../utils/format'
 
 const contractsStore = useContractsStore()
 
 onMounted(async () => {
   await contractsStore.fetchCustomerContracts()
 })
-
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function statusBadgeClass(status) {
-  const map = {
-    active:    'sk-badge-active',
-    signed:    'sk-badge-active',
-    pending:   'sk-badge-pending',
-    expired:   'sk-badge-rejected',
-    cancelled: 'sk-badge-rejected',
-    terminated: 'sk-badge-rejected',
-  }
-  return map[(status || '').toLowerCase()] || 'sk-badge-pending'
-}
 
 const activeCount    = computed(() => contractsStore.contracts.filter((c) => ['active', 'signed'].includes((c.status || '').toLowerCase())).length)
 const pendingCount   = computed(() => contractsStore.contracts.filter((c) => (c.status || '').toLowerCase() === 'pending').length)

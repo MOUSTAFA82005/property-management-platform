@@ -28,7 +28,7 @@ class BuildingController extends Controller
                 $term = '%'.$request->string('search')->trim().'%';
                 $query->where('name', 'like', $term);
             })
-            ->latest()
+            ->orderBy('id')
             ->paginate($request->integer('per_page', 15));
 
         return BuildingResource::collection($buildings)->response();

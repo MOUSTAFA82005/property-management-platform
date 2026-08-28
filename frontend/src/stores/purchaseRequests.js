@@ -11,6 +11,7 @@ import {
   createCustomerPurchaseRequest,
   cancelCustomerPurchaseRequest,
 } from '../services/purchaseRequests'
+import { extractItem, extractList } from '../services/pagination'
 
 export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
   const purchaseRequests = ref([])
@@ -23,22 +24,13 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
 
   function resetError() { error.value = null }
 
-  function extractData(response) {
-    const body = response.data
-    if (Array.isArray(body)) return { data: body, meta: null, links: null }
-    if (body?.data && Array.isArray(body.data)) {
-      return { data: body.data, meta: body.meta || null, links: body.links || null }
-    }
-    return { data: body ? [body] : [], meta: null, links: null }
-  }
-
   // Owner
   async function fetchOwnerPurchaseRequests(params = {}) {
     loading.value = true
     resetError()
     try {
       const res = await getOwnerPurchaseRequests(params)
-      const extracted = extractData(res)
+      const extracted = extractList(res)
       purchaseRequests.value = extracted.data
       meta.value  = extracted.meta
       links.value = extracted.links
@@ -56,7 +48,7 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
     resetError()
     try {
       const res = await getOwnerPurchaseRequest(id)
-      purchaseRequest.value = res.data?.data || res.data
+      purchaseRequest.value = extractItem(res)
       return purchaseRequest.value
     } catch (e) {
       error.value = e.response?.data?.message || e.message
@@ -76,7 +68,7 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
     try {
       const call = action === 'approve' ? approveOwnerPurchaseRequest : rejectOwnerPurchaseRequest
       const res = await call(id)
-      const updated = res.data?.data || res.data
+      const updated = extractItem(res)
       const idx = purchaseRequests.value.findIndex((r) => r.id === id)
       if (idx !== -1) purchaseRequests.value[idx] = updated
       purchaseRequest.value = updated
@@ -98,7 +90,7 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
     resetError()
     try {
       const res = await getCustomerPurchaseRequests(params)
-      const extracted = extractData(res)
+      const extracted = extractList(res)
       purchaseRequests.value = extracted.data
       meta.value  = extracted.meta
       links.value = extracted.links
@@ -116,7 +108,7 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
     resetError()
     try {
       const res = await getCustomerPurchaseRequest(id)
-      purchaseRequest.value = res.data?.data || res.data
+      purchaseRequest.value = extractItem(res)
       return purchaseRequest.value
     } catch (e) {
       error.value = e.response?.data?.message || e.message
@@ -131,7 +123,7 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
     resetError()
     try {
       const res = await createCustomerPurchaseRequest(data)
-      const created = res.data?.data || res.data
+      const created = extractItem(res)
       purchaseRequests.value.unshift(created)
       return created
     } catch (e) {
@@ -147,7 +139,7 @@ export const usePurchaseRequestsStore = defineStore('purchaseRequests', () => {
     resetError()
     try {
       const res = await cancelCustomerPurchaseRequest(id)
-      const updated = res.data?.data || res.data
+      const updated = extractItem(res)
       const idx = purchaseRequests.value.findIndex((r) => r.id === id)
       if (idx !== -1 && updated?.id) purchaseRequests.value[idx] = updated
       if (purchaseRequest.value?.id === id && updated?.id) purchaseRequest.value = updated

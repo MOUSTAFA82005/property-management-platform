@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '../../../stores/auth'
 import { useUnitsStore } from '../../../stores/units'
 import { usePurchaseRequestsStore } from '../../../stores/purchaseRequests'
+import PropertyCover from '../../../components/property/PropertyCover.vue'
 import { formatMoney, humanStatus, statusBadgeClass } from '../../../utils/format'
 
 const route = useRoute()
@@ -65,7 +66,12 @@ onMounted(load)
         <p>{{ unit.property_name }} &bull; {{ unit.building?.name }}</p>
       </div>
 
-      <div class="sk-detail-img" style="height: 160px; font-size: 2rem;">🚪</div>
+      <PropertyCover
+        variant="hero"
+        :name="`${unit.property_name || ''} ${unit.unit_number}`"
+        :type="unit.unit_type"
+        :seed="unit.id"
+      />
 
       <div v-if="feedback" class="sk-alert-success">{{ feedback }}</div>
       <div v-if="requestError" class="sk-alert-error">{{ requestError }}</div>

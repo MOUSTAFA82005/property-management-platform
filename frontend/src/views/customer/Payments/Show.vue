@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { usePaymentsStore } from '../../../stores/payments'
 import CustomerDashboardLayout from '../../../components/customer/CustomerDashboardLayout.vue'
+import { formatDate, formatMoney, statusBadgeClass } from '../../../utils/format'
 
 const route = useRoute()
 const paymentsStore = usePaymentsStore()
@@ -11,27 +12,8 @@ onMounted(async () => {
   await paymentsStore.fetchCustomerPayment(route.params.id)
 })
 
-function formatCurrency(amount) {
-  if (amount == null || isNaN(Number(amount))) return '—'
-  return 'EGP ' + Number(amount).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function statusBadge(status) {
-  const map = {
-    pending: 'sk-badge-pending',
-    paid: 'sk-badge-paid',
-    overdue: 'sk-badge-rejected',
-    cancelled: 'sk-badge-rejected',
-  }
-  return map[status] || 'sk-badge-pending'
-}
+const formatCurrency = (amount) => formatMoney(amount, { withDecimals: true })
+const statusBadge = (status) => statusBadgeClass(status)
 </script>
 
 <template>

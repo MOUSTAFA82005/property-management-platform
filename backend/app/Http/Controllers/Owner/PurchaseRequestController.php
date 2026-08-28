@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Owner;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PurchaseRequestResource;
 use App\Models\PurchaseRequest;
+use App\Notifications\PurchaseRequestNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +28,7 @@ class PurchaseRequestController extends Controller
                     ->whereHas('customer', fn ($c) => $c->where('name', 'like', $term)->orWhere('email', 'like', $term))
                     ->orWhereHas('unit', fn ($u) => $u->where('unit_number', 'like', $term)));
             })
-            ->latest()
+            ->orderBy('id')
             ->paginate($request->integer('per_page', 15));
 
         return PurchaseRequestResource::collection($requests)->response();
@@ -74,6 +75,8 @@ class PurchaseRequestController extends Controller
 
         $purchaseRequest->load(['customer', 'unit.building.property']);
 
+        $purchaseRequest->customer?->notify(PurchaseRequestNotification::approved($purchaseRequest));
+
         return (new PurchaseRequestResource($purchaseRequest))->response();
     }
 
@@ -95,6 +98,8 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->update(['status' => 'rejected']);
 
         $purchaseRequest->load(['customer', 'unit.building.property']);
+
+        $purchaseRequest->customer?->notify(PurchaseRequestNotification::rejected($purchaseRequest));
 
         return (new PurchaseRequestResource($purchaseRequest))->response();
     }

@@ -5,6 +5,7 @@ import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
 import StatusBadge from '../../../components/owner/StatusBadge.vue'
 import { usePropertiesStore } from '../../../stores/properties'
 import { formatMoney, humanStatus } from '../../../utils/format'
+import { propertyImage } from '../../../utils/propertyImagery'
 
 const store = usePropertiesStore()
 
@@ -129,7 +130,22 @@ onMounted(() => load())
         </thead>
         <tbody>
           <tr v-for="p in store.properties" :key="p.id">
-            <td><strong>{{ p.name }}</strong></td>
+            <!-- A thumbnail gives the management table property context
+                 without turning it into a gallery. Decorative: the name
+                 beside it is the accessible label. -->
+            <td>
+              <span class="owner-thumb-cell">
+                <img
+                  class="owner-thumb"
+                  :src="propertyImage({ type: p.property_type, seed: p.id })"
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <strong>{{ p.name }}</strong>
+              </span>
+            </td>
             <td>{{ p.city }}</td>
             <td>{{ p.property_type }}</td>
             <td>{{ p.available_units_count }} / {{ p.units_count }}</td>

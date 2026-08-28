@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Owner\BuildingController as OwnerBuildingController;
 use App\Http\Controllers\Owner\ContractController as OwnerContractController;
 use App\Http\Controllers\Owner\CustomerController;
@@ -92,4 +93,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
+
+    // ---------------------------------------------------
+    // Notifications (both roles)
+    // ---------------------------------------------------
+    // Not under /owner: a notification belongs to a user, not to a portal,
+    // and every query is scoped to the token holder inside the controller.
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
 });

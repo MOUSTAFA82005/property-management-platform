@@ -23,6 +23,45 @@ export function formatDate(value) {
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+/**
+ * A short "5 minutes ago" for notification timestamps.
+ *
+ * Uses Intl.RelativeTimeFormat, which every browser this app targets has —
+ * no date library is added for one label.
+ */
+export function relativeTime(value) {
+  if (!value) return ''
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const seconds = Math.round((date.getTime() - Date.now()) / 1000)
+  const absolute = Math.abs(seconds)
+
+  if (absolute < 45) return 'just now'
+
+  const units = [
+    ['second', 60],
+    ['minute', 60],
+    ['hour', 24],
+    ['day', 7],
+    ['week', 4.35],
+    ['month', 12],
+    ['year', Infinity],
+  ]
+
+  let amount = seconds
+  for (const [unit, step] of units) {
+    if (Math.abs(amount) < step) {
+      return new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+        .format(Math.round(amount), unit)
+    }
+    amount /= step
+  }
+
+  return formatDate(value)
+}
+
 export function formatNumber(value) {
   const number = Number(value)
   return Number.isNaN(number) ? '—' : number.toLocaleString('en-EG')

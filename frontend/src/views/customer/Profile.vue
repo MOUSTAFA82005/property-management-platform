@@ -10,6 +10,7 @@ const authStore = useAuthStore()
 const paymentsStore = usePaymentsStore()
 
 const user = computed(() => authStore.user)
+const profileInitial = computed(() => (user.value?.name?.trim()[0] || 'C').toUpperCase())
 
 const editing = ref(false)
 const saving = ref(false)
@@ -105,10 +106,14 @@ const paymentCount = computed(() => {
 
 <template>
   <CustomerDashboardLayout>
-    <!-- Welcome -->
-    <div class="dash-welcome-section">
-      <h2 class="dash-welcome">Welcome back, {{ user?.name || 'there' }}</h2>
-      <p class="dash-subtitle">Here is a quick overview of your account.</p>
+    <!-- Identity header: who is signed in, before any of the detail. -->
+    <div class="profile-hero">
+      <span class="profile-hero-avatar" aria-hidden="true">{{ profileInitial }}</span>
+      <div class="profile-hero-text">
+        <h2 class="dash-welcome">{{ user?.name || 'Your account' }}</h2>
+        <p class="dash-subtitle">{{ user?.email || 'Here is a quick overview of your account.' }}</p>
+      </div>
+      <span class="profile-hero-role">Customer</span>
     </div>
 
     <!-- Personal Information -->

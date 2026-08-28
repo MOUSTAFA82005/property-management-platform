@@ -50,7 +50,7 @@ class CustomerController extends Controller
                     Unit::query()->ownedBy($owner)->select('id')
                 ),
             ])
-            ->latest()
+            ->orderBy('id')
             ->paginate($request->integer('per_page', 15));
 
         return UserResource::collection($customers)->response();
@@ -70,13 +70,13 @@ class CustomerController extends Controller
         $customer->setRelation(
             'contracts',
             Contract::query()->ownedBy($owner)->where('user_id', $customer->id)
-                ->with('unit.building.property')->latest()->get()
+                ->with('unit.building.property')->orderBy('id')->get()
         );
 
         $customer->setRelation(
             'purchaseRequests',
             PurchaseRequest::query()->ownedBy($owner)->where('customer_id', $customer->id)
-                ->with('unit.building.property')->latest()->get()
+                ->with('unit.building.property')->orderBy('id')->get()
         );
 
         return (new UserResource($customer))->response();

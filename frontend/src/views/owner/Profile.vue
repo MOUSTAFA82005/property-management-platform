@@ -7,6 +7,12 @@ import { getProfile, updateProfile } from '../../services/profile'
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 
+const initial = computed(() => (user.value?.name?.trim()[0] || 'O').toUpperCase())
+const roleLabel = computed(() => {
+  const role = user.value?.role
+  return role ? role.charAt(0).toUpperCase() + role.slice(1) : '—'
+})
+
 const editing = ref(false)
 const saving = ref(false)
 const errors = ref({})
@@ -87,6 +93,17 @@ onMounted(async () => {
     <div class="owner-card-head">
       <h2>Account</h2>
       <button v-if="!editing" class="owner-btn owner-btn-light" @click="startEditing">Edit profile</button>
+    </div>
+
+    <!-- Who is signed in, as readable text. The fields below sit in readonly
+         inputs, whose values are invisible to text-based tooling. -->
+    <div class="owner-identity">
+      <span class="owner-avatar" aria-hidden="true">{{ initial }}</span>
+      <div class="owner-identity-text">
+        <b>{{ user?.name || '—' }}</b>
+        <small>{{ user?.email || '—' }}</small>
+      </div>
+      <span class="owner-identity-role">{{ roleLabel }}</span>
     </div>
 
     <!-- Read-only. Role and status are shown but never editable — the API

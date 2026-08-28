@@ -1,5 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+import BrandLogo from '../BrandLogo.vue'
+import { HERO_IMAGE } from '../../utils/propertyImagery'
 
 defineProps({
   title: { type: String, required: true },
@@ -16,9 +18,12 @@ const points = [
 <template>
   <div class="auth-shell">
     <aside class="auth-aside">
-      <RouterLink to="/" class="auth-brand">
-        <span class="auth-brand-mark" aria-hidden="true">P</span>
-        <span>PropSpace</span>
+      <!-- A real property behind the panel, so signing in already feels like
+           a real-estate platform. Decorative: the copy carries the meaning. -->
+      <img class="auth-aside-photo" :src="HERO_IMAGE" alt="" aria-hidden="true" decoding="async" />
+
+      <RouterLink to="/" class="auth-brand" aria-label="PropSpace home">
+        <BrandLogo :size="34" tone="light" />
       </RouterLink>
 
       <div class="auth-aside-body">

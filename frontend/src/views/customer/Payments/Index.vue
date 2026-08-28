@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { usePaymentsStore } from '../../../stores/payments'
 import CustomerDashboardLayout from '../../../components/customer/CustomerDashboardLayout.vue'
+import { formatDate, formatMoney, statusBadgeClass } from '../../../utils/format'
 
 const paymentsStore = usePaymentsStore()
 
@@ -35,27 +36,10 @@ const paidCount = computed(() => paymentsStore.payments.filter((p) => p.status =
 const pendingCount = computed(() => paymentsStore.payments.filter((p) => p.status === 'pending').length)
 const overdueCount = computed(() => paymentsStore.payments.filter((p) => p.status === 'overdue').length)
 
-function formatCurrency(amount) {
-  if (amount == null || isNaN(Number(amount))) return '—'
-  return 'EGP ' + Number(amount).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function statusBadge(status) {
-  const map = {
-    pending: 'sk-badge-pending',
-    paid: 'sk-badge-paid',
-    overdue: 'sk-badge-rejected',
-    cancelled: 'sk-badge-rejected',
-  }
-  return map[status] || 'sk-badge-pending'
-}
+// Money and dates render through the shared helpers; these keep the local
+// names the template already uses.
+const formatCurrency = (amount) => formatMoney(amount, { withDecimals: true })
+const statusBadge = (status) => statusBadgeClass(status)
 </script>
 
 <template>

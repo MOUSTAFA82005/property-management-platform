@@ -4,22 +4,42 @@ import { RouterLink } from 'vue-router'
 import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
 import StatusBadge from '../../../components/owner/StatusBadge.vue'
 import { useContractsStore } from '../../../stores/contracts'
+import { formatDate } from '../../../utils/format'
 
 const contractsStore = useContractsStore()
 const search = ref('')
+
+const confirmDelete = ref(null)
+const busy = ref(false)
+const feedback = ref('')
+const actionError = ref('')
 
 onMounted(() => {
   contractsStore.fetchOwnerContracts()
 })
 
-const formatDate = (date) => {
-  if (!date) return '-'
+const contractRef = (contract) => `CTR-${String(contract.id).padStart(4, '0')}`
 
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-  })
+async function remove() {
+  busy.value = true
+  feedback.value = ''
+  actionError.value = ''
+
+  const target = confirmDelete.value
+
+  try {
+    await contractsStore.removeContract(target.id)
+    feedback.value = `${contractRef(target)} was deleted.`
+    confirmDelete.value = null
+  } catch (e) {
+    // A contract with payments against it is refused with a 409 and a
+    // message explaining why — surface that rather than a generic failure.
+    actionError.value =
+      e.response?.data?.message || 'Could not delete that contract.'
+    confirmDelete.value = null
+  } finally {
+    busy.value = false
+  }
 }
 
 const filteredContracts = computed(() => {
@@ -50,6 +70,9 @@ const filteredContracts = computed(() => {
     action-text="Create Contract"
     action-to="/owner/contracts/create"
   />
+
+  <div v-if="feedback" class="sk-alert-success">{{ feedback }}</div>
+  <div v-if="actionError" class="sk-alert-error">{{ actionError }}</div>
 
   <div class="owner-card">
     <div class="owner-card-head">
@@ -88,7 +111,7 @@ const filteredContracts = computed(() => {
             <th>Unit</th>
             <th>Date Signed</th>
             <th>Status</th>
-            <th></th>
+            <th>Actions</th>
           </tr>
         </thead>
 
@@ -130,10 +153,48 @@ const filteredContracts = computed(() => {
               >
                 View
               </RouterLink>
+
+              <RouterLink
+                :to="`/owner/contracts/${contract.id}/edit`"
+                class="owner-btn owner-btn-light"
+              >
+                Edit
+              </RouterLink>
+
+              <button
+                class="owner-btn owner-btn-danger"
+                @click="confirmDelete = contract"
+              >
+                Delete
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <div
+    v-if="confirmDelete"
+    class="owner-modal-backdrop"
+    @click.self="confirmDelete = null"
+  >
+    <div class="owner-modal">
+      <h3>Delete {{ contractRef(confirmDelete) }}?</h3>
+      <p>
+        This lease for {{ confirmDelete.user?.name ?? 'this customer' }} will be
+        removed and the unit released. Contracts with payments recorded against
+        them cannot be deleted.
+      </p>
+
+      <div class="owner-form-actions">
+        <button class="owner-btn owner-btn-danger" :disabled="busy" @click="remove">
+          {{ busy ? 'Deleting...' : 'Delete contract' }}
+        </button>
+        <button class="owner-btn owner-btn-light" @click="confirmDelete = null">
+          Cancel
+        </button>
+      </div>
     </div>
   </div>
 </template>

@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../../stores/auth'
 import { usePropertiesStore } from '../../../stores/properties'
 import { usePurchaseRequestsStore } from '../../../stores/purchaseRequests'
+import PropertyCover from '../../../components/property/PropertyCover.vue'
 import { formatMoney, humanStatus, statusBadgeClass } from '../../../utils/format'
 
 const route = useRoute()
@@ -63,11 +64,28 @@ onMounted(load)
     </div>
 
     <div v-else-if="property" class="sk-detail">
-      <div class="sk-detail-img">🏢</div>
+      <!-- Hero: the photograph leads, with the identity sitting on top of it
+           so the page opens like a listing rather than a record. -->
+      <div class="sk-hero">
+        <PropertyCover
+          variant="hero"
+          :name="property.name"
+          :type="property.property_type"
+          :seed="property.id"
+          :show-type="false"
+        />
 
-      <div class="sk-header" style="border: none; padding: 0;">
-        <h1>{{ property.name }}</h1>
-        <p>{{ property.address }}, {{ property.city }} &bull; {{ property.property_type }}</p>
+        <div class="sk-hero-overlay">
+          <span class="sk-hero-type">{{ property.property_type }}</span>
+          <h1 class="sk-hero-title">{{ property.name }}</h1>
+          <p class="sk-hero-loc">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            {{ property.address }}, {{ property.city }}
+          </p>
+        </div>
       </div>
 
       <div class="sk-detail-grid">
@@ -126,7 +144,7 @@ onMounted(load)
               <td>
                 <span class="sk-badge" :class="statusBadgeClass(unit.status)">{{ humanStatus(unit.status) }}</span>
               </td>
-              <td>
+              <td class="sk-row-actions">
                 <RouterLink :to="`/units/${unit.id}`" class="sk-btn sk-btn-secondary">View</RouterLink>
                 <button
                   v-if="authStore.isCustomer() && unit.status === 'available'"
