@@ -1,13 +1,17 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { usePropertiesStore } from '../../../stores/properties'
 import { formatMoney } from '../../../utils/format'
 
 const store = usePropertiesStore()
+const route = useRoute()
+const router = useRouter()
 
-const search = ref('')
-const propertyType = ref('')
+// Seeded from the URL so a search started on the home page arrives intact
+// and the filtered catalog stays shareable.
+const search = ref(typeof route.query.search === 'string' ? route.query.search : '')
+const propertyType = ref(typeof route.query.property_type === 'string' ? route.query.property_type : '')
 let searchTimer = null
 
 async function load(page = 1) {
@@ -21,7 +25,13 @@ async function load(page = 1) {
 // Search is served by the backend; debounce so typing doesn't spam the API.
 watch([search, propertyType], () => {
   clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => load(1), 350)
+  searchTimer = setTimeout(() => {
+    const query = {}
+    if (search.value) query.search = search.value
+    if (propertyType.value) query.property_type = propertyType.value
+    router.replace({ query })
+    load(1)
+  }, 350)
 })
 
 onMounted(() => load())
@@ -35,22 +45,25 @@ onMounted(() => load())
     </div>
 
     <div class="sk-toolbar">
-      <input v-model="search" type="text" class="sk-search" placeholder="Search by name, city or address..." />
-      <div class="sk-form-group" style="margin: 0;">
-        <select v-model="propertyType" class="sk-form-select" style="width: 220px;">
-          <option value="">All types</option>
-          <option value="Apartment Building">Apartment Building</option>
-          <option value="Residential Compound">Residential Compound</option>
-        </select>
-      </div>
+      <label class="sr-only" for="catalog-search">Search properties</label>
+      <input id="catalog-search" v-model="search" type="search" class="sk-search" placeholder="Search by name, city or address..." />
+      <label class="sr-only" for="catalog-type">Filter by property type</label>
+      <select id="catalog-type" v-model="propertyType" class="sk-form-select sk-toolbar-select">
+        <option value="">All types</option>
+        <option value="Apartment Building">Apartment Building</option>
+        <option value="Residential Compound">Residential Compound</option>
+      </select>
     </div>
 
     <!-- Loading -->
-    <div v-if="store.loading" class="sk-cards">
-      <div v-for="n in 3" :key="n" class="sk-card">
+    <div v-if="store.loading" class="sk-cards" aria-busy="true">
+      <div v-for="n in 6" :key="n" class="sk-card">
         <div class="sk-card-img"></div>
-        <div class="skel-line" style="width: 70%;"></div>
-        <div class="skel-line" style="width: 45%;"></div>
+        <div class="sk-card-body">
+          <div class="skel-line" style="width: 70%; height: 1.1rem;"></div>
+          <div class="skel-line" style="width: 45%;"></div>
+          <div class="skel-line" style="width: 60%; margin-top: 1.25rem;"></div>
+        </div>
       </div>
     </div>
 
@@ -71,21 +84,28 @@ onMounted(() => load())
     <!-- Results -->
     <template v-else>
       <div class="sk-cards">
-        <div v-for="prop in store.properties" :key="prop.id" class="sk-card">
-          <div class="sk-card-img">🏢</div>
-          <div class="sk-card-title">{{ prop.name }}</div>
-          <div class="sk-card-meta">{{ prop.city }} &bull; {{ prop.property_type }}</div>
-          <div class="sk-card-price">
-            <template v-if="prop.from_price">From {{ formatMoney(prop.from_price) }} / month</template>
-            <template v-else>Price on request</template>
+        <article v-for="prop in store.properties" :key="prop.id" class="sk-card">
+          <div class="sk-card-img" aria-hidden="true">🏢</div>
+
+          <div class="sk-card-body">
+            <h2 class="sk-card-title">{{ prop.name }}</h2>
+            <p class="sk-card-meta">{{ prop.city }} &bull; {{ prop.property_type }}</p>
+
+            <p class="sk-card-availability">
+              <strong>{{ prop.available_units_count }}</strong> of {{ prop.units_count }} units available
+            </p>
+
+            <p class="sk-card-price">
+              <small>{{ prop.from_price ? 'Starting from' : 'Pricing' }}</small>
+              <template v-if="prop.from_price">{{ formatMoney(prop.from_price) }} / month</template>
+              <template v-else>On request</template>
+            </p>
+
+            <RouterLink :to="`/properties/${prop.id}`" class="sk-btn sk-btn-primary sk-card-cta">
+              View Details
+            </RouterLink>
           </div>
-          <div class="sk-card-meta" style="margin-bottom: 0.75rem;">
-            {{ prop.available_units_count }} of {{ prop.units_count }} units available
-          </div>
-          <RouterLink :to="`/properties/${prop.id}`" class="sk-btn sk-btn-primary" style="width: 100%; justify-content: center;">
-            View Details
-          </RouterLink>
-        </div>
+        </article>
       </div>
 
       <div v-if="store.meta && store.meta.last_page > 1" class="sk-pagination">

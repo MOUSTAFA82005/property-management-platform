@@ -93,11 +93,11 @@ onMounted(async () => {
          rejects changing them and this form never sends them. -->
     <div v-if="!editing" class="owner-form">
       <div class="owner-form-grid">
-        <div class="owner-field"><label>Name</label><input class="owner-input" :value="user?.name || '—'" readonly /></div>
-        <div class="owner-field"><label>Email</label><input class="owner-input" :value="user?.email || '—'" readonly /></div>
-        <div class="owner-field"><label>Phone</label><input class="owner-input" :value="user?.phone || '—'" readonly /></div>
-        <div class="owner-field"><label>Role</label><input class="owner-input" :value="user?.role || '—'" readonly style="text-transform: capitalize;" /></div>
-        <div class="owner-field"><label>Status</label><input class="owner-input" :value="user?.status || '—'" readonly style="text-transform: capitalize;" /></div>
+        <div class="owner-field"><label for="ro-owner-name">Name</label><input id="ro-owner-name" class="owner-input" :value="user?.name || '—'" readonly /></div>
+        <div class="owner-field"><label for="ro-owner-email">Email</label><input id="ro-owner-email" class="owner-input" :value="user?.email || '—'" readonly /></div>
+        <div class="owner-field"><label for="ro-owner-phone">Phone</label><input id="ro-owner-phone" class="owner-input" :value="user?.phone || '—'" readonly /></div>
+        <div class="owner-field"><label for="ro-owner-role">Role</label><input id="ro-owner-role" class="owner-input" :value="user?.role || '—'" readonly style="text-transform: capitalize;" /></div>
+        <div class="owner-field"><label for="ro-owner-status">Status</label><input id="ro-owner-status" class="owner-input" :value="user?.status || '—'" readonly style="text-transform: capitalize;" /></div>
       </div>
     </div>
 

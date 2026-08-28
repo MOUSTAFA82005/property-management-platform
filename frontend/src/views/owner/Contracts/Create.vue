@@ -29,11 +29,14 @@ const saving = ref(false)
 
 const fieldError = (f) => errors.value[f]?.[0] || ''
 
-// A contract can only be created against a unit that is free.
-const availableUnits = computed(() => unitsStore.units.filter((u) => u.status === 'available'))
+// A contract can be created against a free unit, or against one reserved by
+// an approved purchase request — that approval is what this contract closes.
+const lettableUnits = computed(() =>
+  unitsStore.units.filter((u) => u.status === 'available' || u.status === 'reserved'),
+)
 
 function onUnitChange() {
-  const unit = availableUnits.value.find((u) => u.id === Number(form.unit_id))
+  const unit = lettableUnits.value.find((u) => u.id === Number(form.unit_id))
   if (unit && !form.monthly_rent) {
     form.monthly_rent = unit.monthly_rent
     form.security_deposit = Number(unit.monthly_rent) * 2
@@ -42,7 +45,7 @@ function onUnitChange() {
 
 onMounted(async () => {
   await Promise.all([
-    unitsStore.fetchOwnerUnits({ status: 'available', per_page: 100 }).catch(() => {}),
+    unitsStore.fetchOwnerUnits({ per_page: 100 }).catch(() => {}),
     customersStore.fetchCustomers({ per_page: 100 }).catch(() => {}),
   ])
 })
@@ -82,11 +85,11 @@ async function save() {
 
   <div v-if="generalError" class="sk-alert-error">{{ generalError }}</div>
 
-  <div v-if="availableUnits.length === 0 && !unitsStore.loading" class="empty-box">
+  <div v-if="lettableUnits.length === 0 && !unitsStore.loading" class="empty-box">
     <div class="empty-icon">🚪</div>
-    <h3>No available units</h3>
-    <p>Every unit you own is currently occupied or reserved.</p>
-    <RouterLink to="/owner/units" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+    <h3>No units free to let</h3>
+    <p>Every unit you own is currently under an active contract.</p>
+    <RouterLink to="/owner/units" class="owner-btn owner-btn-primary">
       View units
     </RouterLink>
   </div>
@@ -95,7 +98,7 @@ async function save() {
     <div class="empty-icon">👥</div>
     <h3>No customers connected yet</h3>
     <p>Contracts are created for customers who already have a request or contract with you.</p>
-    <RouterLink to="/owner/purchase-requests" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+    <RouterLink to="/owner/purchase-requests" class="owner-btn owner-btn-primary">
       View purchase requests
     </RouterLink>
   </div>
@@ -115,9 +118,9 @@ async function save() {
         <div class="owner-field">
           <label for="c-unit">Unit</label>
           <select id="c-unit" v-model="form.unit_id" class="owner-select" :class="{ 'is-invalid': fieldError('unit_id') }" @change="onUnitChange">
-            <option value="">Select an available unit</option>
-            <option v-for="u in availableUnits" :key="u.id" :value="u.id">
-              {{ u.property_name }} — {{ u.unit_number }} ({{ formatMoney(u.monthly_rent) }})
+            <option value="">Select a unit</option>
+            <option v-for="u in lettableUnits" :key="u.id" :value="u.id">
+              {{ u.property_name }} — {{ u.unit_number }} ({{ formatMoney(u.monthly_rent) }}){{ u.status === 'reserved' ? ' — reserved' : '' }}
             </option>
           </select>
           <small v-if="fieldError('unit_id')" class="owner-field-error">{{ fieldError('unit_id') }}</small>

@@ -29,7 +29,7 @@ async function handleLogout() {
       <!-- Logo -->
       <RouterLink to="/" class="nav-logo" @click="closeMobile">
         <svg width="32" height="30" viewBox="0 0 48 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path fill="#864CFF" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/>
+          <path fill="#5B3FE0" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/>
         </svg>
         <span class="nav-brand">PropSpace</span>
       </RouterLink>
@@ -112,7 +112,7 @@ async function handleLogout() {
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(134, 76, 255, 0.1);
+  border-bottom: 1px solid rgba(91, 63, 224, 0.1);
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
 }
 
@@ -137,7 +137,7 @@ async function handleLogout() {
 .nav-brand {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #14141F;
   letter-spacing: -0.02em;
 }
 
@@ -161,18 +161,18 @@ async function handleLogout() {
 
 .nav-link:hover,
 .nav-link.active {
-  color: #864CFF;
-  background: rgba(134, 76, 255, 0.07);
+  color: #5B3FE0;
+  background: rgba(91, 63, 224, 0.07);
 }
 
 .nav-link-owner {
-  color: #864CFF;
+  color: #5B3FE0;
   font-weight: 600;
-  background: rgba(134, 76, 255, 0.06);
+  background: rgba(91, 63, 224, 0.06);
 }
 
 .nav-link-owner:hover {
-  background: rgba(134, 76, 255, 0.14);
+  background: rgba(91, 63, 224, 0.14);
 }
 
 .nav-actions {
@@ -197,25 +197,25 @@ async function handleLogout() {
 }
 
 .btn-ghost:hover {
-  color: #864CFF;
-  background: rgba(134, 76, 255, 0.07);
+  color: #5B3FE0;
+  background: rgba(91, 63, 224, 0.07);
 }
 
 .btn-ghost-primary {
-  background: linear-gradient(135deg, #864CFF, #6B2FFF);
+  background: linear-gradient(135deg, #5B3FE0, #3D279E);
   color: #fff !important;
   padding: 0.45rem 1.1rem;
   border-radius: 8px;
   font-weight: 600;
-  box-shadow: 0 2px 12px rgba(134, 76, 255, 0.3);
+  box-shadow: 0 2px 12px rgba(91, 63, 224, 0.3);
 }
 
 .btn-ghost-primary:hover {
   opacity: 0.92;
-  background: linear-gradient(135deg, #864CFF, #6B2FFF) !important;
+  background: linear-gradient(135deg, #5B3FE0, #3D279E) !important;
   color: #fff !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 18px rgba(134, 76, 255, 0.4);
+  box-shadow: 0 4px 18px rgba(91, 63, 224, 0.4);
 }
 
 .btn-logout {
@@ -247,7 +247,7 @@ async function handleLogout() {
   display: block;
   width: 22px;
   height: 2px;
-  background: #1a1a2e;
+  background: #14141F;
   border-radius: 2px;
   transition: transform 0.3s, opacity 0.3s;
 }
@@ -259,7 +259,7 @@ async function handleLogout() {
 /* Mobile menu */
 .mobile-menu {
   background: #fff;
-  border-top: 1px solid rgba(134, 76, 255, 0.08);
+  border-top: 1px solid rgba(91, 63, 224, 0.08);
   padding: 0.75rem 1.5rem 1.25rem;
   display: flex;
   flex-direction: column;
@@ -278,12 +278,12 @@ async function handleLogout() {
 }
 
 .mobile-link:hover {
-  background: rgba(134, 76, 255, 0.07);
-  color: #864CFF;
+  background: rgba(91, 63, 224, 0.07);
+  color: #5B3FE0;
 }
 
 .mobile-link-owner {
-  color: #864CFF;
+  color: #5B3FE0;
   font-weight: 600;
 }
 

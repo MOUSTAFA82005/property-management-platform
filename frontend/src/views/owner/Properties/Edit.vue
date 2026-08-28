@@ -78,7 +78,7 @@ async function save() {
   <div v-else-if="store.error && !form.name" class="empty-box empty-box-error">
     <h3>Could not load this property</h3>
     <p>{{ store.error }}</p>
-    <RouterLink to="/owner/properties" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+    <RouterLink to="/owner/properties" class="owner-btn owner-btn-primary">
       Back to Properties
     </RouterLink>
   </div>

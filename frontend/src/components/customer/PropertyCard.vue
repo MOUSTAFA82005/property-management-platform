@@ -170,7 +170,7 @@ defineProps({
   right: 12px;
   padding: 0.3rem 0.75rem;
   background: rgba(255, 255, 255, 0.95);
-  color: #864CFF;
+  color: #5B3FE0;
   font-size: 0.75rem;
   font-weight: 700;
   border-radius: 100px;
@@ -198,14 +198,14 @@ defineProps({
 }
 
 .card-location svg {
-  color: #864CFF;
+  color: #5B3FE0;
   flex-shrink: 0;
 }
 
 .card-name {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #14141F;
   line-height: 1.3;
   margin: 0 0 0.75rem 0;
   letter-spacing: -0.01em;
@@ -265,7 +265,7 @@ defineProps({
 .price-value {
   font-size: 1rem;
   font-weight: 800;
-  color: #1a1a2e;
+  color: #14141F;
   letter-spacing: -0.01em;
 }
 
@@ -274,8 +274,8 @@ defineProps({
   align-items: center;
   gap: 0.35rem;
   padding: 0.5rem 1rem;
-  background: rgba(134, 76, 255, 0.08);
-  color: #864CFF;
+  background: rgba(91, 63, 224, 0.08);
+  color: #5B3FE0;
   font-size: 0.825rem;
   font-weight: 700;
   text-decoration: none;
@@ -285,7 +285,7 @@ defineProps({
 }
 
 .card-btn:hover {
-  background: #864CFF;
+  background: #5B3FE0;
   color: #fff;
   transform: translateX(2px);
 }

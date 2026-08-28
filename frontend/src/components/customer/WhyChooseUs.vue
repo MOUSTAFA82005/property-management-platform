@@ -7,8 +7,8 @@ const benefits = [
     </svg>`,
     title: 'Verified Properties',
     description: 'Browse properties listed and managed by verified owners with full confidence.',
-    color: '#864CFF',
-    bg: 'rgba(134, 76, 255, 0.08)',
+    color: '#5B3FE0',
+    bg: 'rgba(91, 63, 224, 0.08)',
   },
   {
     id: 2,
@@ -17,8 +17,8 @@ const benefits = [
     </svg>`,
     title: 'Easy Process',
     description: 'Find a property and submit your request through a simple, streamlined process.',
-    color: '#47BFFF',
-    bg: 'rgba(71, 191, 255, 0.08)',
+    color: '#7A57EC',
+    bg: 'rgba(122, 87, 236, 0.09)',
   },
   {
     id: 3,
@@ -29,8 +29,8 @@ const benefits = [
     </svg>`,
     title: 'Secure Transactions',
     description: 'Keep your requests, contracts and payments organized safely in one place.',
-    color: '#10B981',
-    bg: 'rgba(16, 185, 129, 0.08)',
+    color: '#0F7A4D',
+    bg: 'rgba(15, 122, 77, 0.08)',
   },
   {
     id: 4,
@@ -41,8 +41,8 @@ const benefits = [
     </svg>`,
     title: 'Trusted Platform',
     description: 'A simple, transparent platform connecting property owners with customers.',
-    color: '#F59E0B',
-    bg: 'rgba(245, 158, 11, 0.08)',
+    color: '#8A5B06',
+    bg: 'rgba(224, 163, 61, 0.12)',
   },
 ]
 </script>
@@ -93,8 +93,8 @@ const benefits = [
 .section-tag {
   display: inline-block;
   padding: 0.3rem 1rem;
-  background: rgba(134, 76, 255, 0.1);
-  color: #864CFF;
+  background: rgba(91, 63, 224, 0.1);
+  color: #5B3FE0;
   font-size: 0.78rem;
   font-weight: 700;
   border-radius: 100px;
@@ -106,7 +106,7 @@ const benefits = [
 .section-title {
   font-size: clamp(1.6rem, 3vw, 2.25rem);
   font-weight: 800;
-  color: #1a1a2e;
+  color: #14141F;
   letter-spacing: -0.03em;
   margin-bottom: 0.75rem;
 }
@@ -161,7 +161,7 @@ const benefits = [
 .benefit-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #14141F;
   margin-bottom: 0.6rem;
   letter-spacing: -0.01em;
 }

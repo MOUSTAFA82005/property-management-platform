@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import AuthShell from '../../components/auth/AuthShell.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -58,19 +59,9 @@ async function doLogin() {
 </script>
 
 <template>
-  <div class="sk-page" style="display: flex; align-items: center; justify-content: center; min-height: 80vh;">
-    <form class="sk-form" style="width: 100%; max-width: 400px; padding: 2rem;" @submit.prevent="doLogin">
-      <div class="sk-header" style="text-align: center; border: none;">
-        <h1>Welcome Back</h1>
-        <p>Login to your PropSpace account</p>
-      </div>
-
-      <div
-        v-if="generalError"
-        style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.875rem;"
-      >
-        {{ generalError }}
-      </div>
+  <AuthShell title="Welcome back" subtitle="Sign in to your PropSpace account.">
+    <form class="auth-form" @submit.prevent="doLogin">
+      <div v-if="generalError" class="sk-alert-error" role="alert">{{ generalError }}</div>
 
       <div class="sk-form-group">
         <label class="sk-form-label" for="email">Email Address</label>
@@ -79,6 +70,7 @@ async function doLogin() {
           v-model="form.email"
           type="email"
           class="sk-form-input"
+          :class="{ 'is-invalid': fieldError('email') }"
           autocomplete="email"
           placeholder="name@example.com"
         />
@@ -92,27 +84,21 @@ async function doLogin() {
           v-model="form.password"
           type="password"
           class="sk-form-input"
+          :class="{ 'is-invalid': fieldError('password') }"
           autocomplete="current-password"
-          placeholder="••••••••"
+          placeholder="Your password"
         />
         <small v-if="fieldError('password')" class="sk-form-error">{{ fieldError('password') }}</small>
       </div>
 
-      <div class="sk-form-actions" style="flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
-        <button
-          type="submit"
-          class="sk-btn sk-btn-primary"
-          style="justify-content: center;"
-          :disabled="loading"
-        >
-          {{ loading ? 'Logging in...' : 'Login' }}
-        </button>
-      </div>
+      <button type="submit" class="sk-btn sk-btn-primary auth-submit" :disabled="loading">
+        {{ loading ? 'Logging in...' : 'Login' }}
+      </button>
 
-      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+      <p class="auth-alt">
         Don't have an account?
-        <RouterLink to="/register" style="color: #864CFF; font-weight: 600;">Register here</RouterLink>
+        <RouterLink to="/register">Register here</RouterLink>
       </p>
     </form>
-  </div>
+  </AuthShell>
 </template>

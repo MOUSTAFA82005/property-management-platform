@@ -10,7 +10,26 @@ const route = useRoute()
 const store = usePropertiesStore()
 
 const property = computed(() => store.property)
-const buildings = computed(() => property.value?.buildings || [])
+/**
+ * The owner property endpoint returns each unit with the building it sits in.
+ * Deriving the building list from that avoids a second request for data the
+ * response already carries.
+ */
+const buildings = computed(() => {
+  const embedded = property.value?.buildings
+  if (Array.isArray(embedded) && embedded.length) return embedded
+
+  const byId = new Map()
+
+  for (const unit of property.value?.units || []) {
+    const building = unit.building
+    if (!building) continue
+    if (!byId.has(building.id)) byId.set(building.id, { ...building, units_count: 0 })
+    byId.get(building.id).units_count += 1
+  }
+
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name))
+})
 
 onMounted(() => {
   store.fetchOwnerProperty(route.params.id).catch(() => {})
@@ -36,6 +55,7 @@ onMounted(() => {
       :title="property.name"
       subtitle="Property details and unit overview."
       action-text="Edit Property"
+      action-icon="fa-solid fa-pen"
       :action-to="`/owner/properties/${property.id}/edit`"
     />
 
@@ -47,16 +67,16 @@ onMounted(() => {
         </div>
         <div class="owner-form">
           <div class="owner-form-grid">
-            <div class="owner-field"><label>City</label><input class="owner-input" :value="property.city" readonly /></div>
-            <div class="owner-field"><label>Type</label><input class="owner-input" :value="property.property_type" readonly /></div>
-            <div class="owner-field full"><label>Address</label><input class="owner-input" :value="property.address" readonly /></div>
-            <div class="owner-field"><label>Total units</label><input class="owner-input" :value="property.units_count" readonly /></div>
-            <div class="owner-field"><label>Available units</label><input class="owner-input" :value="property.available_units_count" readonly /></div>
-            <div class="owner-field"><label>Buildings</label><input class="owner-input" :value="property.buildings_count" readonly /></div>
-            <div class="owner-field"><label>Listing</label><input class="owner-input" :value="property.is_published ? 'Published' : 'Draft'" readonly /></div>
+            <div class="owner-field"><label for="ro-properties-city">City</label><input id="ro-properties-city" class="owner-input" :value="property.city" readonly /></div>
+            <div class="owner-field"><label for="ro-properties-type">Type</label><input id="ro-properties-type" class="owner-input" :value="property.property_type" readonly /></div>
+            <div class="owner-field full"><label for="ro-properties-address">Address</label><input id="ro-properties-address" class="owner-input" :value="property.address" readonly /></div>
+            <div class="owner-field"><label for="ro-properties-total-units">Total units</label><input id="ro-properties-total-units" class="owner-input" :value="property.units_count" readonly /></div>
+            <div class="owner-field"><label for="ro-properties-available-units">Available units</label><input id="ro-properties-available-units" class="owner-input" :value="property.available_units_count" readonly /></div>
+            <div class="owner-field"><label for="ro-properties-buildings">Buildings</label><input id="ro-properties-buildings" class="owner-input" :value="property.buildings_count" readonly /></div>
+            <div class="owner-field"><label for="ro-properties-listing">Listing</label><input id="ro-properties-listing" class="owner-input" :value="property.is_published ? 'Published' : 'Draft'" readonly /></div>
             <div class="owner-field full" v-if="property.description">
-              <label>Description</label>
-              <textarea class="owner-textarea" readonly>{{ property.description }}</textarea>
+              <label for="ro-properties-description">Description</label>
+              <textarea id="ro-properties-description" class="owner-textarea" readonly>{{ property.description }}</textarea>
             </div>
           </div>
         </div>
@@ -71,7 +91,7 @@ onMounted(() => {
         <div v-if="buildings.length === 0" class="owner-empty">
           <h3>No buildings yet</h3>
           <p>Add a building before you can create units here.</p>
-          <RouterLink to="/owner/buildings/create" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+          <RouterLink to="/owner/buildings/create" class="owner-btn owner-btn-primary">
             Add Building
           </RouterLink>
         </div>
@@ -82,7 +102,7 @@ onMounted(() => {
               <div class="owner-mini-avatar"><i class="fa-solid fa-building"></i></div>
               <div>
                 <b>{{ b.name }}</b>
-                <small>{{ b.floors_count }} floors &bull; {{ (b.units || []).length }} units</small>
+                <small>{{ b.floors_count }} floors &bull; {{ b.units_count ?? (b.units || []).length }} units</small>
               </div>
             </div>
             <RouterLink :to="`/owner/buildings/${b.id}/edit`" class="owner-btn owner-btn-light">Edit</RouterLink>

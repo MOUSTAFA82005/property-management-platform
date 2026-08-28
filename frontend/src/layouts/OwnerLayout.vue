@@ -18,20 +18,32 @@ async function handleLogout() {
   router.push('/login')
 }
 
+/**
+ * Grouped navigation. The groups describe what the owner is trying to do
+ * rather than which table the data lives in, so the sidebar reads as a
+ * workflow instead of a schema dump.
+ */
 const nav = [
-  { label: 'Dashboard', to: '/owner/dashboard', icon: 'fa-solid fa-house', group: 'Main Menu' },
-  { label: 'Properties', to: '/owner/properties', icon: 'fa-solid fa-building', group: 'Main Menu' },
-  { label: 'Buildings', to: '/owner/buildings', icon: 'fa-solid fa-city', group: 'Main Menu' },
-  { label: 'Units', to: '/owner/units', icon: 'fa-solid fa-door-open', group: 'Main Menu' },
-  { label: 'Customers', to: '/owner/customers', icon: 'fa-solid fa-users', group: 'Management' },
-  { label: 'Purchase Requests', to: '/owner/purchase-requests', icon: 'fa-solid fa-file-circle-check', group: 'Management' },
-  { label: 'Contracts', to: '/owner/contracts', icon: 'fa-solid fa-file-contract', group: 'Financials' },
-  { label: 'Payments', to: '/owner/payments', icon: 'fa-solid fa-money-bill-wave', group: 'Financials' },
+  { label: 'Dashboard', to: '/owner/dashboard', icon: 'fa-solid fa-chart-line', group: 'Overview' },
+  { label: 'Properties', to: '/owner/properties', icon: 'fa-solid fa-building', group: 'Property management' },
+  { label: 'Buildings', to: '/owner/buildings', icon: 'fa-solid fa-city', group: 'Property management' },
+  { label: 'Units', to: '/owner/units', icon: 'fa-solid fa-door-open', group: 'Property management' },
+  { label: 'Customers', to: '/owner/customers', icon: 'fa-solid fa-users', group: 'People & agreements' },
+  { label: 'Purchase Requests', to: '/owner/purchase-requests', icon: 'fa-solid fa-inbox', group: 'People & agreements' },
+  { label: 'Contracts', to: '/owner/contracts', icon: 'fa-solid fa-file-contract', group: 'People & agreements' },
+  { label: 'Payments', to: '/owner/payments', icon: 'fa-solid fa-money-bill-wave', group: 'Finance' },
   { label: 'My Profile', to: '/owner/profile', icon: 'fa-solid fa-user', group: 'Account' },
 ]
 
 const groups = computed(() => [...new Set(nav.map(item => item.group))])
+
 const isActive = (to) => route.path === to || (to !== '/owner/dashboard' && route.path.startsWith(to + '/'))
+
+/** The topbar names the section the owner is in — no invented status text. */
+const currentSection = computed(() => {
+  const match = [...nav].sort((a, b) => b.to.length - a.to.length).find(item => isActive(item.to))
+  return match?.label || 'Owner workspace'
+})
 
 const close = () => { open.value = false }
 const toggleMenu = () => { open.value = !open.value }
@@ -53,12 +65,14 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="owner-shell">
+    <a class="skip-link" href="#owner-content">Skip to content</a>
+
     <div v-if="open" class="owner-overlay" @click="close" aria-hidden="true"></div>
 
     <aside class="owner-sidebar" :class="{ 'is-open': open }" aria-label="Owner navigation">
       <div class="owner-sidebar-head">
         <RouterLink to="/owner/dashboard" class="owner-brand" @click="close">
-          <span class="owner-brand-mark">P</span>
+          <span class="owner-brand-mark" aria-hidden="true">P</span>
           <span>
             <b>PropSpace</b>
             <small>Owner Portal</small>
@@ -66,7 +80,7 @@ onBeforeUnmount(() => {
         </RouterLink>
 
         <button class="owner-sidebar-close" type="button" @click="close" aria-label="Close menu">
-          <i class="fa-solid fa-xmark"></i>
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -79,55 +93,59 @@ onBeforeUnmount(() => {
             :to="item.to"
             class="owner-nav-item"
             :class="{ active: isActive(item.to) }"
+            :aria-current="isActive(item.to) ? 'page' : undefined"
             @click="close"
           >
-            <span class="owner-nav-icon"><i :class="item.icon"></i></span>
+            <span class="owner-nav-icon" aria-hidden="true"><i :class="item.icon"></i></span>
             <span>{{ item.label }}</span>
           </RouterLink>
         </template>
       </nav>
 
       <div class="owner-sidebar-bottom">
+        <RouterLink to="/" class="owner-nav-item" @click="close">
+          <span class="owner-nav-icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+          <span>View public site</span>
+        </RouterLink>
         <button type="button" data-testid="logout" class="owner-nav-item owner-logout" @click="handleLogout">
-          <span class="owner-nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+          <span class="owner-nav-icon" aria-hidden="true"><i class="fa-solid fa-right-from-bracket"></i></span>
           <span>Logout</span>
         </button>
       </div>
     </aside>
 
-    <main class="owner-main">
+    <div class="owner-main">
       <header class="owner-topbar">
-        <button class="owner-menu-btn" type="button" @click="toggleMenu" :aria-expanded="open" aria-label="Open navigation menu">
-          <i class="fa-solid fa-bars"></i>
+        <button
+          class="owner-menu-btn"
+          type="button"
+          @click="toggleMenu"
+          :aria-expanded="open"
+          aria-controls="owner-nav"
+          aria-label="Open navigation menu"
+        >
+          <i class="fa-solid fa-bars" aria-hidden="true"></i>
         </button>
 
         <div class="owner-top-title">
-          <span>Owner Area</span>
-          <small>Manage your properties and business</small>
+          <span>{{ currentSection }}</span>
+          <small>Owner workspace</small>
         </div>
 
         <div class="owner-top-actions">
-          <button class="owner-icon-btn" type="button" aria-label="Search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </button>
-          <button class="owner-icon-btn" type="button" aria-label="Notifications">
-            <i class="fa-solid fa-bell"></i>
-            <span class="owner-notification-dot"></span>
-          </button>
           <div class="owner-user">
-            <div class="owner-avatar">{{ initial }}</div>
+            <div class="owner-avatar" aria-hidden="true">{{ initial }}</div>
             <div>
               <b>{{ displayName }}</b>
               <small>{{ user?.email || 'Owner' }}</small>
             </div>
-            <i class="fa-solid fa-chevron-down owner-user-chevron"></i>
           </div>
         </div>
       </header>
 
-      <section class="owner-content">
+      <main id="owner-content" class="owner-content">
         <RouterView />
-      </section>
-    </main>
+      </main>
+    </div>
   </div>
 </template>

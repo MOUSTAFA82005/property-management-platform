@@ -8,18 +8,10 @@ import {
   LinearScale,
   CategoryScale,
   Tooltip,
-  Filler
+  Filler,
 } from 'chart.js'
 
-Chart.register(
-  LineController,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip,
-  Filler
-)
+Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Filler)
 
 /**
  * Collected revenue per month, straight from GET /api/owner/dashboard.
@@ -34,109 +26,82 @@ const chartCanvas = ref(null)
 
 const labels = computed(() => props.series.map((point) => point.label))
 const values = computed(() => props.series.map((point) => Number(point.total) || 0))
+const hasData = computed(() => values.value.some((value) => value > 0))
+const range = computed(() => {
+  if (props.series.length === 0) return ''
+  return `${props.series[0].label} — ${props.series[props.series.length - 1].label}`
+})
 
 let revenueChart = null
 
-onMounted(() => {
-  if (!chartCanvas.value) return
+function build() {
+  if (!chartCanvas.value || revenueChart) return
 
   revenueChart = new Chart(chartCanvas.value, {
     type: 'line',
-
     data: {
       labels: labels.value,
-
       datasets: [
         {
-          label: 'Revenue',
-
+          label: 'Collected',
           data: values.value,
-
-          borderColor: '#864CFF',
-          backgroundColor: 'rgba(134, 76, 255, 0.10)',
-
-          borderWidth: 3,
-          tension: 0.4,
-
+          borderColor: '#5B3FE0',
+          backgroundColor: 'rgba(91, 63, 224, 0.10)',
+          borderWidth: 2.5,
+          tension: 0.35,
           fill: true,
-
-          pointRadius: 4,
-          pointHoverRadius: 7,
-
-          pointBackgroundColor: '#864CFF',
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#5B3FE0',
           pointBorderColor: '#ffffff',
-          pointBorderWidth: 2
-        }
-      ]
+          pointBorderWidth: 2,
+        },
+      ],
     },
-
     options: {
       responsive: true,
       maintainAspectRatio: false,
-
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      },
-
+      interaction: { intersect: false, mode: 'index' },
       plugins: {
-        legend: {
-          display: false
-        },
-
+        legend: { display: false },
         tooltip: {
-          backgroundColor: '#171526',
-          padding: 12,
+          backgroundColor: '#14141f',
+          padding: 10,
+          cornerRadius: 8,
           displayColors: false,
-
+          titleFont: { size: 12 },
+          bodyFont: { size: 12 },
           callbacks: {
-            label(context) {
-              return `Revenue: EGP ${context.parsed.y.toLocaleString()}`
-            }
-          }
-        }
+            label: (context) => `Collected: EGP ${context.parsed.y.toLocaleString()}`,
+          },
+        },
       },
-
       scales: {
         x: {
-          grid: {
-            display: false
-          },
-
-          border: {
-            display: false
-          },
-
-          ticks: {
-            color: '#737184'
-          }
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: '#8b8da3', font: { size: 11 } },
         },
-
         y: {
           beginAtZero: true,
-
-          border: {
-            display: false
-          },
-
-          grid: {
-            color: '#ebeaf1'
-          },
-
+          border: { display: false },
+          grid: { color: '#f1f2f7' },
           ticks: {
-            color: '#737184',
-
-            callback(value) {
-              return `EGP ${value / 1000}K`
-            }
-          }
-        }
-      }
-    }
+            color: '#8b8da3',
+            font: { size: 11 },
+            maxTicksLimit: 5,
+            callback: (value) => (value >= 1000 ? `${value / 1000}k` : value),
+          },
+        },
+      },
+    },
   })
-})
+}
+
+onMounted(build)
 
 watch([labels, values], () => {
+  build()
   if (!revenueChart) return
   revenueChart.data.labels = labels.value
   revenueChart.data.datasets[0].data = values.value
@@ -152,37 +117,20 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="card border-0 shadow-sm h-100">
-
-    <div class="card-header bg-white border-0 p-4">
-
-      <div class="d-flex justify-content-between align-items-center">
-
-        <div>
-          <h5 class="fw-bold mb-1">
-            Revenue Overview
-          </h5>
-
-          <small class="text-muted">
-            Monthly revenue performance
-          </small>
-        </div>
-
-        <span class="badge rounded-pill bg-light text-dark">
-          2026
-        </span>
-
+  <section class="owner-card owner-chart-card">
+    <div class="owner-card-head">
+      <div>
+        <h2>Collected revenue</h2>
+        <p>Payments marked paid, by month</p>
       </div>
-
+      <span v-if="range">{{ range }}</span>
     </div>
 
-    <div class="card-body">
-
-      <div class="revenue-chart-container">
-        <canvas ref="chartCanvas"></canvas>
-      </div>
-
+    <div class="owner-chart-body">
+      <p v-if="!hasData" class="owner-chart-note">
+        No payments have been collected in this period yet.
+      </p>
+      <div class="owner-chart-canvas"><canvas ref="chartCanvas"></canvas></div>
     </div>
-
-  </div>
+  </section>
 </template>

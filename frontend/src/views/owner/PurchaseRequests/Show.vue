@@ -72,17 +72,17 @@ onMounted(load)
 
       <div class="owner-form">
         <div class="owner-form-grid">
-          <div class="owner-field"><label>Customer</label><input class="owner-input" :value="request.customer?.name || '—'" readonly /></div>
-          <div class="owner-field"><label>Email</label><input class="owner-input" :value="request.customer?.email || '—'" readonly /></div>
-          <div class="owner-field"><label>Phone</label><input class="owner-input" :value="request.customer?.phone || '—'" readonly /></div>
-          <div class="owner-field"><label>Submitted</label><input class="owner-input" :value="formatDate(request.created_at)" readonly /></div>
-          <div class="owner-field"><label>Property</label><input class="owner-input" :value="request.unit?.property_name || '—'" readonly /></div>
-          <div class="owner-field"><label>Unit</label><input class="owner-input" :value="request.unit?.unit_number || '—'" readonly /></div>
-          <div class="owner-field"><label>Monthly rent</label><input class="owner-input" :value="formatMoney(request.unit?.monthly_rent)" readonly /></div>
-          <div class="owner-field"><label>Unit status</label><input class="owner-input" :value="humanStatus(request.unit?.status)" readonly /></div>
+          <div class="owner-field"><label for="ro-purchaserequests-customer">Customer</label><input id="ro-purchaserequests-customer" class="owner-input" :value="request.customer?.name || '—'" readonly /></div>
+          <div class="owner-field"><label for="ro-purchaserequests-email">Email</label><input id="ro-purchaserequests-email" class="owner-input" :value="request.customer?.email || '—'" readonly /></div>
+          <div class="owner-field"><label for="ro-purchaserequests-phone">Phone</label><input id="ro-purchaserequests-phone" class="owner-input" :value="request.customer?.phone || '—'" readonly /></div>
+          <div class="owner-field"><label for="ro-purchaserequests-submitted">Submitted</label><input id="ro-purchaserequests-submitted" class="owner-input" :value="formatDate(request.created_at)" readonly /></div>
+          <div class="owner-field"><label for="ro-purchaserequests-property">Property</label><input id="ro-purchaserequests-property" class="owner-input" :value="request.unit?.property_name || '—'" readonly /></div>
+          <div class="owner-field"><label for="ro-purchaserequests-unit">Unit</label><input id="ro-purchaserequests-unit" class="owner-input" :value="request.unit?.unit_number || '—'" readonly /></div>
+          <div class="owner-field"><label for="ro-purchaserequests-monthly-rent">Monthly rent</label><input id="ro-purchaserequests-monthly-rent" class="owner-input" :value="formatMoney(request.unit?.monthly_rent)" readonly /></div>
+          <div class="owner-field"><label for="ro-purchaserequests-unit-status">Unit status</label><input id="ro-purchaserequests-unit-status" class="owner-input" :value="humanStatus(request.unit?.status)" readonly /></div>
           <div class="owner-field full" v-if="request.notes">
-            <label>Customer message</label>
-            <textarea class="owner-textarea" readonly>{{ request.notes }}</textarea>
+            <label for="ro-purchaserequests-customer-message">Customer message</label>
+            <textarea id="ro-purchaserequests-customer-message" class="owner-textarea" readonly>{{ request.notes }}</textarea>
           </div>
         </div>
 

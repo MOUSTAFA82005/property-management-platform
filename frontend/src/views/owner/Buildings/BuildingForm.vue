@@ -115,7 +115,7 @@ async function save() {
       <div class="empty-icon">🏢</div>
       <h3>You need a property first</h3>
       <p>Buildings belong to a property. Create one, then come back.</p>
-      <RouterLink to="/owner/properties/create" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+      <RouterLink to="/owner/properties/create" class="owner-btn owner-btn-primary">
         Add Property
       </RouterLink>
     </div>

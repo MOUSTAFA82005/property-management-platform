@@ -1,7 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { usePaymentsStore } from '../../../stores/payments'
 import { useContractsStore } from '../../../stores/contracts'
+import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
+import EmptyState from '../../../components/ui/EmptyState.vue'
 
 const paymentsStore = usePaymentsStore()
 const contractsStore = useContractsStore()
@@ -13,6 +15,7 @@ const showDeleteModal = ref(false)
 const editingPayment = ref(null)
 const deletingPayment = ref(null)
 const currentPage = ref(1)
+let searchTimer = null
 const submitting = ref(false)
 const apiErrors = ref({})
 const successMessage = ref('')
@@ -34,17 +37,9 @@ const formErrors = ref({})
 // ── Computed ───────────────────────────────────────
 const isEditing = computed(() => editingPayment.value !== null)
 
-const filteredPayments = computed(() => {
-  if (!searchQuery.value) return paymentsStore.payments
-  const q = searchQuery.value.toLowerCase()
-  return paymentsStore.payments.filter((p) => {
-    const customer = p.contract?.user?.name?.toLowerCase() || ''
-    const unit = p.contract?.unit?.unit_number?.toLowerCase() || ''
-    const ref = p.reference?.toLowerCase() || ''
-    const status = p.status?.toLowerCase() || ''
-    return customer.includes(q) || unit.includes(q) || ref.includes(q) || status.includes(q)
-  })
-})
+// The list is paginated server-side, so searching has to be too: filtering
+// the rows already in hand would only ever search the page on screen.
+const filteredPayments = computed(() => paymentsStore.payments)
 
 const totalPages = computed(() => paymentsStore.meta?.last_page || 1)
 const currentPageNum = computed(() => paymentsStore.meta?.current_page || 1)
@@ -74,6 +69,20 @@ function statusBadgeClass(status) {
   return map[status] || 'sk-badge-pending'
 }
 
+const METHOD_LABELS = {
+  cash: 'Cash',
+  bank_transfer: 'Bank Transfer',
+  cheque: 'Cheque',
+  credit_card: 'Credit Card',
+  instapay: 'InstaPay',
+  other: 'Other',
+}
+
+function methodLabel(payment) {
+  if (!payment.payment_method) return '—'
+  return METHOD_LABELS[payment.payment_method] || payment.payment_method
+}
+
 function customerName(payment) {
   return payment.contract?.user?.name || '—'
 }
@@ -89,8 +98,17 @@ function unitLabel(payment) {
 // ── Actions ────────────────────────────────────────
 async function loadPayments(page = 1) {
   currentPage.value = page
-  await paymentsStore.fetchOwnerPayments({ page })
+  await paymentsStore.fetchOwnerPayments({
+    page,
+    search: searchQuery.value || undefined,
+  })
 }
+
+// Search is served by the backend; debounce so typing doesn't spam the API.
+watch(searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => loadPayments(1).catch(() => {}), 350)
+})
 
 async function loadContracts() {
   await contractsStore.fetchOwnerContracts({ per_page: 100 })
@@ -231,223 +249,226 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <!-- Header + toolbar -->
-    <div class="sk-toolbar">
-      <div class="sk-header" style="border: none; padding: 0; margin: 0;">
-        <h1 style="margin-bottom: 0;">Payments</h1>
-        <p style="margin-top: 0.25rem;">Track incoming installments and completed payments.</p>
+  <OwnerPageHeader
+    title="Payments"
+    subtitle="Track incoming installments and completed payments."
+  >
+    <template #actions>
+      <button class="owner-btn owner-btn-primary" data-testid="payment-add" @click="openAddModal">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Payment
+      </button>
+    </template>
+  </OwnerPageHeader>
+
+  <div v-if="successMessage" class="sk-alert-success" role="status">{{ successMessage }}</div>
+
+  <div class="owner-card">
+    <div class="owner-card-head">
+      <div class="owner-search-row">
+        <label class="sr-only" for="payment-search">Search payments</label>
+        <input
+          id="payment-search"
+          v-model="searchQuery"
+          type="search"
+          class="owner-search"
+          placeholder="Search by customer, unit, reference, status..."
+        />
       </div>
-      <button class="sk-btn sk-btn-primary" data-testid="payment-add" @click="openAddModal">+ Add Payment</button>
+      <span v-if="paymentsStore.meta">{{ totalItems }} payments</span>
     </div>
 
-    <!-- Search -->
-    <div style="margin-bottom: 1rem;">
-      <input
-        v-model="searchQuery"
-        type="text"
-        class="sk-search"
-        placeholder="Search by customer, unit, reference, status..."
-        style="width: 100%; max-width: 360px;"
-      />
+    <!-- Loading -->
+    <div v-if="paymentsStore.loading && paymentsStore.payments.length === 0" class="owner-loading" aria-busy="true">
+      <div v-for="n in 6" :key="'skeleton-' + n" class="skel-line" style="height: 1.15rem; margin-bottom: .75rem;"></div>
     </div>
 
-    <!-- Success message -->
-    <div v-if="successMessage" style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: #d1fae5; color: #065f46; border-radius: 8px; font-size: 0.875rem; font-weight: 500;">
-      {{ successMessage }}
-    </div>
+    <!-- Error -->
+    <EmptyState
+      v-else-if="paymentsStore.error && paymentsStore.payments.length === 0"
+      tone="error"
+      title="Failed to load payments"
+      :message="paymentsStore.error"
+    >
+      <button class="owner-btn owner-btn-primary" @click="retryLoad">Retry</button>
+    </EmptyState>
 
-    <!-- Loading state -->
-    <div v-if="paymentsStore.loading && paymentsStore.payments.length === 0" class="sk-table-wrap">
-      <table class="sk-table">
-        <thead>
-          <tr>
-            <th>Payment ID</th>
-            <th>Customer</th>
-            <th>Contract</th>
-            <th>Unit</th>
-            <th>Amount</th>
-            <th>Due Date</th>
-            <th>Paid Date</th>
-            <th>Payment Method</th>
-            <th>Status</th>
-            <th>Reference</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="n in 5" :key="'skeleton-' + n">
-            <td><div style="height: 14px; width: 60px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 100px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 80px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 50px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 90px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 90px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 90px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 80px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 60px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 70px; background: #e5e7eb; border-radius: 4px;"></div></td>
-            <td><div style="height: 14px; width: 80px; background: #e5e7eb; border-radius: 4px;"></div></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Error state -->
-    <div v-else-if="paymentsStore.error && paymentsStore.payments.length === 0" style="text-align: center; padding: 3rem 1rem;">
-      <div style="font-size: 1.1rem; font-weight: 600; color: #dc2626; margin-bottom: 0.5rem;">Failed to load payments</div>
-      <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem;">{{ paymentsStore.error }}</div>
-      <button class="sk-btn sk-btn-primary" @click="retryLoad">Retry</button>
-    </div>
-
-    <!-- Empty state -->
-    <div v-else-if="!paymentsStore.loading && paymentsStore.payments.length === 0" class="sk-table-wrap">
-      <div style="text-align: center; padding: 3rem 1rem; color: #6b7280;">
-        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem;">No payments found.</div>
-        <div style="font-size: 0.875rem;">Get started by adding your first payment.</div>
-      </div>
-    </div>
+    <!-- Empty -->
+    <EmptyState
+      v-else-if="!paymentsStore.loading && paymentsStore.payments.length === 0"
+      icon="💳"
+      title="No payments found"
+      message="Record your first payment against one of your contracts."
+    >
+      <button class="owner-btn owner-btn-primary" @click="openAddModal">Add Payment</button>
+    </EmptyState>
 
     <!-- Data table -->
-    <div v-else class="sk-table-wrap">
-      <table class="sk-table">
-        <thead>
-          <tr>
-            <th>Payment ID</th>
-            <th>Customer</th>
-            <th>Contract</th>
-            <th>Unit</th>
-            <th>Amount</th>
-            <th>Due Date</th>
-            <th>Paid Date</th>
-            <th>Payment Method</th>
-            <th>Status</th>
-            <th>Reference</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="pay in filteredPayments" :key="pay.id">
-            <td><strong>PAY-{{ String(pay.id).padStart(4, '0') }}</strong></td>
-            <td>{{ customerName(pay) }}</td>
-            <td>{{ contractLabel(pay) }}</td>
-            <td>{{ unitLabel(pay) }}</td>
-            <td>{{ formatCurrency(pay.amount) }}</td>
-            <td>{{ formatDate(pay.due_date) }}</td>
-            <td>{{ formatDate(pay.paid_date) }}</td>
-            <td>{{ pay.payment_method || '—' }}</td>
-            <td>
-              <span class="sk-badge" :class="statusBadgeClass(pay.status)">{{ pay.status }}</span>
-            </td>
-            <td>{{ pay.reference || '—' }}</td>
-            <td>
-              <div style="display: flex; gap: 0.25rem;">
-                <button class="sk-btn sk-btn-secondary" @click="openEditModal(pay)">Edit</button>
-                <button class="sk-btn sk-btn-danger" data-testid="payment-delete" @click="openDeleteModal(pay)">Delete</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <template v-else>
+      <div class="owner-table-wrap">
+        <table class="owner-table">
+          <thead>
+            <tr>
+              <th scope="col">Payment ID</th>
+              <th scope="col">Customer</th>
+              <th scope="col">Contract</th>
+              <th scope="col">Unit</th>
+              <th scope="col">Amount</th>
+              <th scope="col">Due Date</th>
+              <th scope="col">Paid Date</th>
+              <th scope="col">Payment Method</th>
+              <th scope="col">Status</th>
+              <th scope="col">Reference</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="pay in filteredPayments" :key="pay.id">
+              <td><strong>PAY-{{ String(pay.id).padStart(4, '0') }}</strong></td>
+              <td>{{ customerName(pay) }}</td>
+              <td>{{ contractLabel(pay) }}</td>
+              <td>{{ unitLabel(pay) }}</td>
+              <td>{{ formatCurrency(pay.amount) }}</td>
+              <td>{{ formatDate(pay.due_date) }}</td>
+              <td>{{ formatDate(pay.paid_date) }}</td>
+              <td>{{ methodLabel(pay) }}</td>
+              <td><span class="sk-badge" :class="statusBadgeClass(pay.status)">{{ pay.status }}</span></td>
+              <td>{{ pay.reference || '—' }}</td>
+              <td>
+                <button class="owner-btn owner-btn-light" @click="openEditModal(pay)">Edit</button>
+                <button class="owner-btn owner-btn-danger" data-testid="payment-delete" @click="openDeleteModal(pay)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <!-- No search results -->
-      <div v-if="filteredPayments.length === 0 && searchQuery" style="text-align: center; padding: 2rem 1rem; color: #6b7280;">
-        <div style="font-size: 0.925rem; font-weight: 600;">No payments match your search.</div>
+      <div v-if="filteredPayments.length === 0 && searchQuery" class="owner-empty">
+        <h3>No payments match your search</h3>
+        <p>Try a different customer, unit or reference.</p>
       </div>
-    </div>
+    </template>
 
     <!-- Pagination -->
-    <div v-if="paymentsStore.meta && totalPages > 1" style="display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-      <div style="font-size: 0.825rem; color: #6b7280;">
-        Showing page {{ currentPageNum }} of {{ totalPages }} ({{ totalItems }} total)
-      </div>
-      <div style="display: flex; gap: 0.25rem;">
-        <button
-          class="sk-btn sk-btn-secondary"
-          :disabled="currentPageNum <= 1"
-          @click="goToPage(currentPageNum - 1)"
-        >
-          &laquo; Previous
+    <div v-if="paymentsStore.meta && totalPages > 1" class="sk-pagination">
+      <span>Showing page {{ currentPageNum }} of {{ totalPages }} ({{ totalItems }} total)</span>
+      <div class="owner-pager">
+        <button class="owner-btn owner-btn-light" :disabled="currentPageNum <= 1" @click="goToPage(currentPageNum - 1)">
+          Previous
         </button>
         <button
           v-for="page in totalPages"
           :key="'page-' + page"
-          class="sk-btn"
-          :class="page === currentPageNum ? 'sk-btn-primary' : 'sk-btn-secondary'"
+          class="owner-btn"
+          :class="page === currentPageNum ? 'owner-btn-primary' : 'owner-btn-light'"
+          :aria-current="page === currentPageNum ? 'page' : undefined"
           @click="goToPage(page)"
         >
           {{ page }}
         </button>
-        <button
-          class="sk-btn sk-btn-secondary"
-          :disabled="currentPageNum >= totalPages"
-          @click="goToPage(currentPageNum + 1)"
-        >
-          Next &raquo;
+        <button class="owner-btn owner-btn-light" :disabled="currentPageNum >= totalPages" @click="goToPage(currentPageNum + 1)">
+          Next
         </button>
       </div>
     </div>
+  </div>
 
-    <!-- ── Add / Edit Payment Modal ───────────────── -->
-    <div v-if="showFormModal" style="position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem;">
-      <!-- Backdrop -->
-      <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.4);" @click="closeFormModal"></div>
+  <!-- Add / Edit payment -->
+  <div v-if="showFormModal" class="owner-modal-backdrop" @click.self="closeFormModal">
+    <div class="owner-modal" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
+      <div class="owner-modal-head">
+        <h3 id="payment-modal-title">{{ isEditing ? 'Edit Payment' : 'Add New Payment' }}</h3>
+        <button class="owner-icon-btn" type="button" aria-label="Close" @click="closeFormModal">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
 
-      <!-- Modal -->
-      <div style="position: relative; background: #fff; border-radius: 12px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15);">
-        <div style="padding: 1.5rem 1.5rem 0;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
-            <h2 style="font-size: 1.15rem; font-weight: 700; color: #111827;">{{ isEditing ? 'Edit Payment' : 'Add New Payment' }}</h2>
-            <button @click="closeFormModal" style="background: none; border: none; font-size: 1.5rem; color: #6b7280; cursor: pointer; line-height: 1;">&times;</button>
-          </div>
+      <div v-if="apiErrors.general" class="sk-alert-error">{{ apiErrors.general }}</div>
 
-          <!-- API general error -->
-          <div v-if="apiErrors.general" style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: #fee2e2; color: #991b1b; border-radius: 8px; font-size: 0.85rem;">
-            {{ apiErrors.general }}
-          </div>
-        </div>
-
-        <form @submit.prevent="submitForm" style="padding: 0 1.5rem 1.5rem;">
-          <!-- Contract -->
-          <div class="sk-form-group">
-            <label class="sk-form-label">Contract *</label>
-            <select v-model="form.contract_id" data-testid="payment-contract" class="sk-form-select" :class="{ 'is-invalid': formErrors.contract_id || apiErrors.contract_id }">
+      <form @submit.prevent="submitForm">
+        <div class="owner-form-grid">
+          <div class="owner-field full">
+            <label for="payment-contract-field">Contract *</label>
+            <select
+              id="payment-contract-field"
+              v-model="form.contract_id"
+              data-testid="payment-contract"
+              class="owner-select"
+              :class="{ 'is-invalid': formErrors.contract_id || apiErrors.contract_id }"
+            >
               <option value="" disabled>Select a contract</option>
               <option v-for="c in contractsStore.contracts" :key="c.id" :value="c.id">
                 CTR-{{ String(c.id).padStart(4, '0') }} — {{ c.user?.name || 'Customer #' + c.user_id }} — Unit {{ c.unit?.unit_number || c.unit_id }}
               </option>
             </select>
-            <div v-if="formErrors.contract_id" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ formErrors.contract_id }}</div>
-            <div v-else-if="apiErrors.contract_id" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.contract_id[0] }}</div>
+            <small v-if="formErrors.contract_id" class="owner-field-error">{{ formErrors.contract_id }}</small>
+            <small v-else-if="apiErrors.contract_id" class="owner-field-error">{{ apiErrors.contract_id[0] }}</small>
           </div>
 
-          <!-- Amount -->
-          <div class="sk-form-group">
-            <label class="sk-form-label">Amount *</label>
-            <input v-model="form.amount" data-testid="payment-amount" type="number" step="0.01" min="0.01" class="sk-form-input" :class="{ 'is-invalid': formErrors.amount || apiErrors.amount }" placeholder="e.g. 150000" />
-            <div v-if="formErrors.amount" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ formErrors.amount }}</div>
-            <div v-else-if="apiErrors.amount" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.amount[0] }}</div>
+          <div class="owner-field">
+            <label for="payment-amount-field">Amount *</label>
+            <input
+              id="payment-amount-field"
+              v-model="form.amount"
+              data-testid="payment-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              class="owner-input"
+              :class="{ 'is-invalid': formErrors.amount || apiErrors.amount }"
+              placeholder="e.g. 150000"
+            />
+            <small v-if="formErrors.amount" class="owner-field-error">{{ formErrors.amount }}</small>
+            <small v-else-if="apiErrors.amount" class="owner-field-error">{{ apiErrors.amount[0] }}</small>
           </div>
 
-          <!-- Due Date -->
-          <div class="sk-form-group">
-            <label class="sk-form-label">Due Date *</label>
-            <input v-model="form.due_date" data-testid="payment-due-date" type="date" class="sk-form-input" :class="{ 'is-invalid': formErrors.due_date || apiErrors.due_date }" />
-            <div v-if="formErrors.due_date" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ formErrors.due_date }}</div>
-            <div v-else-if="apiErrors.due_date" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.due_date[0] }}</div>
+          <div class="owner-field">
+            <label for="payment-status-field">Status *</label>
+            <select
+              id="payment-status-field"
+              v-model="form.status"
+              data-testid="payment-status"
+              class="owner-select"
+              :class="{ 'is-invalid': formErrors.status || apiErrors.status }"
+            >
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <small v-if="formErrors.status" class="owner-field-error">{{ formErrors.status }}</small>
+            <small v-else-if="apiErrors.status" class="owner-field-error">{{ apiErrors.status[0] }}</small>
           </div>
 
-          <!-- Paid Date -->
-          <div class="sk-form-group">
-            <label class="sk-form-label">Paid Date</label>
-            <input v-model="form.paid_date" type="date" class="sk-form-input" :class="{ 'is-invalid': apiErrors.paid_date }" />
-            <div v-if="apiErrors.paid_date" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.paid_date[0] }}</div>
+          <div class="owner-field">
+            <label for="payment-due-field">Due Date *</label>
+            <input
+              id="payment-due-field"
+              v-model="form.due_date"
+              data-testid="payment-due-date"
+              type="date"
+              class="owner-input"
+              :class="{ 'is-invalid': formErrors.due_date || apiErrors.due_date }"
+            />
+            <small v-if="formErrors.due_date" class="owner-field-error">{{ formErrors.due_date }}</small>
+            <small v-else-if="apiErrors.due_date" class="owner-field-error">{{ apiErrors.due_date[0] }}</small>
           </div>
 
-          <!-- Payment Method -->
-          <div class="sk-form-group">
-            <label class="sk-form-label">Payment Method</label>
-            <select v-model="form.payment_method" class="sk-form-select">
+          <div class="owner-field">
+            <label for="payment-paid-field">Paid Date</label>
+            <input
+              id="payment-paid-field"
+              v-model="form.paid_date"
+              type="date"
+              class="owner-input"
+              :class="{ 'is-invalid': apiErrors.paid_date }"
+            />
+            <small v-if="apiErrors.paid_date" class="owner-field-error">{{ apiErrors.paid_date[0] }}</small>
+          </div>
+
+          <div class="owner-field">
+            <label for="payment-method-field">Payment Method</label>
+            <select id="payment-method-field" v-model="form.payment_method" class="owner-select">
               <option value="">Select method</option>
               <option value="cash">Cash</option>
               <option value="bank_transfer">Bank Transfer</option>
@@ -457,66 +478,58 @@ onMounted(async () => {
             </select>
           </div>
 
-          <!-- Status -->
-          <div class="sk-form-group">
-            <label class="sk-form-label">Status *</label>
-            <select v-model="form.status" data-testid="payment-status" class="sk-form-select" :class="{ 'is-invalid': formErrors.status || apiErrors.status }">
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="overdue">Overdue</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <div v-if="formErrors.status" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ formErrors.status }}</div>
-            <div v-else-if="apiErrors.status" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.status[0] }}</div>
+          <div class="owner-field">
+            <label for="payment-reference-field">Reference</label>
+            <input
+              id="payment-reference-field"
+              v-model="form.reference"
+              data-testid="payment-reference"
+              type="text"
+              class="owner-input"
+              :class="{ 'is-invalid': apiErrors.reference }"
+              placeholder="e.g. REF-001"
+            />
+            <small v-if="apiErrors.reference" class="owner-field-error">{{ apiErrors.reference[0] }}</small>
           </div>
 
-          <!-- Reference -->
-          <div class="sk-form-group">
-            <label class="sk-form-label">Reference</label>
-            <input v-model="form.reference" data-testid="payment-reference" type="text" class="sk-form-input" :class="{ 'is-invalid': apiErrors.reference }" placeholder="e.g. REF-001" />
-            <div v-if="apiErrors.reference" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.25rem;">{{ apiErrors.reference[0] }}</div>
+          <div class="owner-field full">
+            <label for="payment-notes-field">Notes</label>
+            <textarea
+              id="payment-notes-field"
+              v-model="form.notes"
+              class="owner-textarea"
+              placeholder="Additional notes..."
+              rows="3"
+            ></textarea>
           </div>
-
-          <!-- Notes -->
-          <div class="sk-form-group">
-            <label class="sk-form-label">Notes</label>
-            <textarea v-model="form.notes" class="sk-form-textarea" placeholder="Additional notes..." rows="3"></textarea>
-          </div>
-
-          <!-- Actions -->
-          <div class="sk-form-actions" style="padding-top: 0.5rem;">
-            <button type="submit" data-testid="payment-submit" class="sk-btn sk-btn-primary" :disabled="submitting">
-              {{ submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Payment' : 'Create Payment') }}
-            </button>
-            <button type="button" class="sk-btn sk-btn-secondary" @click="closeFormModal" :disabled="submitting">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- ── Delete Confirmation Modal ───────────────── -->
-    <div v-if="showDeleteModal" style="position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem;">
-      <!-- Backdrop -->
-      <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.4);" @click="closeDeleteModal"></div>
-
-      <!-- Modal -->
-      <div style="position: relative; background: #fff; border-radius: 12px; width: 100%; max-width: 420px; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.15);">
-        <h2 style="font-size: 1.1rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">Delete Payment</h2>
-        <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.25rem;">
-          Are you sure you want to delete payment <strong>PAY-{{ String(deletingPayment?.id).padStart(4, '0') }}</strong>? This action cannot be undone.
-        </p>
-
-        <!-- API error -->
-        <div v-if="apiErrors.general" style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: #fee2e2; color: #991b1b; border-radius: 8px; font-size: 0.85rem;">
-          {{ apiErrors.general }}
         </div>
 
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-          <button class="sk-btn sk-btn-secondary" @click="closeDeleteModal" :disabled="submitting">Cancel</button>
-          <button class="sk-btn sk-btn-danger" data-testid="payment-delete-confirm" @click="confirmDelete" :disabled="submitting">
-            {{ submitting ? 'Deleting...' : 'Delete' }}
+        <div class="owner-form-actions">
+          <button type="submit" data-testid="payment-submit" class="owner-btn owner-btn-primary" :disabled="submitting">
+            {{ submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Payment' : 'Create Payment') }}
           </button>
+          <button type="button" class="owner-btn owner-btn-light" :disabled="submitting" @click="closeFormModal">Cancel</button>
         </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete confirmation -->
+  <div v-if="showDeleteModal" class="owner-modal-backdrop" @click.self="closeDeleteModal">
+    <div class="owner-modal" role="dialog" aria-modal="true" aria-labelledby="payment-delete-title">
+      <h3 id="payment-delete-title">Delete Payment</h3>
+      <p>
+        Are you sure you want to delete payment
+        <strong>PAY-{{ String(deletingPayment?.id).padStart(4, '0') }}</strong>? This action cannot be undone.
+      </p>
+
+      <div v-if="apiErrors.general" class="sk-alert-error">{{ apiErrors.general }}</div>
+
+      <div class="owner-form-actions">
+        <button class="owner-btn owner-btn-danger" data-testid="payment-delete-confirm" :disabled="submitting" @click="confirmDelete">
+          {{ submitting ? 'Deleting...' : 'Delete' }}
+        </button>
+        <button class="owner-btn owner-btn-light" :disabled="submitting" @click="closeDeleteModal">Cancel</button>
       </div>
     </div>
   </div>

@@ -80,7 +80,7 @@ onMounted(() => load())
       <div class="empty-icon">🏗️</div>
       <h3>No buildings yet</h3>
       <p>Add a building to one of your properties before creating units.</p>
-      <RouterLink to="/owner/buildings/create" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+      <RouterLink to="/owner/buildings/create" class="owner-btn owner-btn-primary">
         Add Building
       </RouterLink>
     </div>

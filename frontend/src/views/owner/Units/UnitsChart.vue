@@ -1,20 +1,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { Chart, DoughnutController, ArcElement, Tooltip } from 'chart.js'
 
-import {
-    Chart,
-    DoughnutController,
-    ArcElement,
-    Tooltip,
-    Legend
-} from 'chart.js'
-
-Chart.register(
-    DoughnutController,
-    ArcElement,
-    Tooltip,
-    Legend
-)
+Chart.register(DoughnutController, ArcElement, Tooltip)
 
 /**
  * Unit mix from GET /api/owner/dashboard.
@@ -28,113 +16,94 @@ const props = defineProps({
 
 const chartCanvas = ref(null)
 
-const values = computed(() => [
-  props.units?.available ?? 0,
-  props.units?.occupied ?? 0,
-  props.units?.reserved ?? 0,
-])
+const LEGEND = [
+  { key: 'available', label: 'Available', color: '#0f9d6b' },
+  { key: 'occupied', label: 'Occupied', color: '#5B3FE0' },
+  { key: 'reserved', label: 'Reserved', color: '#E0A33D' },
+]
+
+const values = computed(() => LEGEND.map((item) => props.units?.[item.key] ?? 0))
+const total = computed(() => values.value.reduce((sum, value) => sum + value, 0))
+const hasData = computed(() => total.value > 0)
+
+/** Share of units that are let — arithmetic on the API's own counters. */
+const occupancy = computed(() =>
+  total.value === 0 ? null : Math.round(((props.units?.occupied ?? 0) / total.value) * 100),
+)
 
 let unitsChart = null
 
-onMounted(() => {
+function build() {
+  if (!chartCanvas.value || unitsChart) return
 
-    unitsChart = new Chart(
-        chartCanvas.value,
+  unitsChart = new Chart(chartCanvas.value, {
+    type: 'doughnut',
+    data: {
+      labels: LEGEND.map((item) => item.label),
+      datasets: [
         {
-            type: 'doughnut',
+          data: values.value,
+          backgroundColor: LEGEND.map((item) => item.color),
+          borderWidth: 0,
+          hoverOffset: 6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '72%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#14141f',
+          padding: 10,
+          cornerRadius: 8,
+          displayColors: false,
+        },
+      },
+    },
+  })
+}
 
-            data: {
-                labels: [
-                    'Available',
-                    'Occupied',
-                    'Reserved'
-                ],
-
-                datasets: [
-                    {
-                        data: values.value,
-
-                        backgroundColor: [
-                            '#864CFF',
-                            '#47BFFF',
-                            '#F5B83D'
-                        ],
-
-                        borderWidth: 0,
-
-                        hoverOffset: 8
-                    }
-                ]
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                cutout: '70%',
-
-                plugins: {
-
-                    legend: {
-                        position: 'bottom',
-
-                        labels: {
-                            usePointStyle: true,
-
-                            padding: 20
-                        }
-                    }
-
-                }
-            }
-        }
-    )
-
-})
+onMounted(build)
 
 watch(values, () => {
-    if (!unitsChart) return
-    unitsChart.data.datasets[0].data = values.value
-    unitsChart.update()
+  build()
+  if (!unitsChart) return
+  unitsChart.data.datasets[0].data = values.value
+  unitsChart.update()
 })
 
 onBeforeUnmount(() => {
-
-    if (unitsChart) {
-        unitsChart.destroy()
-    }
-
+  if (unitsChart) unitsChart.destroy()
 })
 </script>
 
 <template>
-
-    <div class="card border-0 shadow-sm h-100">
-
-        <div class="card-header bg-white border-0 p-4">
-
-            <h5 class="fw-bold mb-1">
-                Unit Occupancy
-            </h5>
-
-            <small class="text-muted">
-                Current unit status
-            </small>
-
-        </div>
-
-        <div class="card-body">
-
-            <div style="height: 300px;">
-
-                <canvas ref="chartCanvas"></canvas>
-
-            </div>
-
-        </div>
-
+  <section class="owner-card owner-chart-card">
+    <div class="owner-card-head">
+      <div>
+        <h2>Unit mix</h2>
+        <p>Current status of every unit you own</p>
+      </div>
+      <span v-if="occupancy !== null">{{ occupancy }}% occupied</span>
     </div>
 
+    <div class="owner-chart-body">
+      <p v-if="!hasData" class="owner-chart-note">No units have been added yet.</p>
+
+      <div class="owner-donut">
+        <div class="owner-chart-canvas owner-donut-canvas"><canvas ref="chartCanvas"></canvas></div>
+
+        <ul class="owner-legend">
+          <li v-for="(item, index) in LEGEND" :key="item.key">
+            <span class="owner-legend-dot" :style="{ background: item.color }" aria-hidden="true"></span>
+            <span class="owner-legend-label">{{ item.label }}</span>
+            <span class="owner-legend-value">{{ values[index] }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
 </template>

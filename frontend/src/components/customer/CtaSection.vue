@@ -32,7 +32,7 @@ import { RouterLink } from 'vue-router'
 .cta-section {
   position: relative;
   padding: 5rem 1.5rem;
-  background: linear-gradient(135deg, #864CFF 0%, #6B2FFF 50%, #47BFFF 100%);
+  background: linear-gradient(135deg, #4A2FC2 0%, #5B3FE0 55%, #7A57EC 100%);
   overflow: hidden;
   text-align: center;
 }
@@ -112,7 +112,7 @@ import { RouterLink } from 'vue-router'
   gap: 0.5rem;
   padding: 0.9rem 2rem;
   background: #fff;
-  color: #864CFF;
+  color: #5B3FE0;
   font-size: 1rem;
   font-weight: 800;
   text-decoration: none;
@@ -124,7 +124,7 @@ import { RouterLink } from 'vue-router'
 .btn-cta-primary:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.25);
-  color: #6B2FFF;
+  color: #3D279E;
 }
 
 .btn-cta-ghost {

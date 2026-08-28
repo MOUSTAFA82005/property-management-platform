@@ -59,7 +59,7 @@ onMounted(() => {
     </RouterLink>
 
     <OwnerPageHeader
-      :title="contract ? `Contract ${contract.id}` : 'Contract Details'"
+      :title="contract ? `Contract CTR-${String(contract.id).padStart(4, '0')}` : 'Contract Details'"
       subtitle="Signed agreement details and payment schedule."
     />
 
@@ -96,8 +96,8 @@ onMounted(() => {
             <div class="owner-form-grid">
 
               <div class="owner-field">
-                <label>Customer</label>
-                <input
+                <label for="ro-contracts-customer">Customer</label>
+                <input id="ro-contracts-customer"
                   class="owner-input"
                   :value="contract.user?.name || '-'"
                   readonly
@@ -105,8 +105,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Email</label>
-                <input
+                <label for="ro-contracts-email">Email</label>
+                <input id="ro-contracts-email"
                   class="owner-input"
                   :value="contract.user?.email || '-'"
                   readonly
@@ -114,19 +114,17 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Property</label>
-                <input
+                <label for="ro-contracts-property">Property</label>
+                <input id="ro-contracts-property"
                   class="owner-input"
-                  :value="
-                    contract.unit?.building?.property?.name || '-'
-                  "
+                  :value="contract.unit?.property_name || '-'"
                   readonly
                 >
               </div>
 
               <div class="owner-field">
-                <label>Building</label>
-                <input
+                <label for="ro-contracts-building">Building</label>
+                <input id="ro-contracts-building"
                   class="owner-input"
                   :value="contract.unit?.building?.name || '-'"
                   readonly
@@ -134,8 +132,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Unit</label>
-                <input
+                <label for="ro-contracts-unit">Unit</label>
+                <input id="ro-contracts-unit"
                   class="owner-input"
                   :value="contract.unit?.unit_number || '-'"
                   readonly
@@ -143,8 +141,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Date signed</label>
-                <input
+                <label for="ro-contracts-date-signed">Date signed</label>
+                <input id="ro-contracts-date-signed"
                   class="owner-input"
                   :value="formatDate(contract.start_date)"
                   readonly
@@ -152,8 +150,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>End date</label>
-                <input
+                <label for="ro-contracts-end-date">End date</label>
+                <input id="ro-contracts-end-date"
                   class="owner-input"
                   :value="formatDate(contract.end_date)"
                   readonly
@@ -161,8 +159,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Monthly Rent</label>
-                <input
+                <label for="ro-contracts-monthly-rent">Monthly Rent</label>
+                <input id="ro-contracts-monthly-rent"
                   class="owner-input"
                   :value="formatMoney(contract.monthly_rent)"
                   readonly
@@ -170,8 +168,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Security Deposit</label>
-                <input
+                <label for="ro-contracts-security-deposit">Security Deposit</label>
+                <input id="ro-contracts-security-deposit"
                   class="owner-input"
                   :value="formatMoney(contract.security_deposit)"
                   readonly
@@ -180,14 +178,10 @@ onMounted(() => {
 
               <div
                 v-if="contract.notes"
-                class="owner-field"
+                class="owner-field full"
               >
-                <label>Notes</label>
-                <input
-                  class="owner-input"
-                  :value="contract.notes"
-                  readonly
-                >
+                <label for="ro-contracts-notes">Notes</label>
+                <textarea id="ro-contracts-notes" class="owner-textarea" readonly>{{ contract.notes }}</textarea>
               </div>
 
             </div>
@@ -200,39 +194,27 @@ onMounted(() => {
             <h2>Payment schedule</h2>
           </div>
 
-          <div class="owner-list">
-
+          <div v-if="contract.payments?.length" class="owner-list">
             <div
-              v-if="contract.payments?.length"
               v-for="payment in contract.payments"
               :key="payment.id"
               class="owner-list-item"
             >
               <div>
-                <b>
-                  {{ payment.description || `Payment #${payment.id}` }}
-                </b>
-
-                <small>
-                  {{ formatDate(payment.due_date) }}
-                </small>
+                <b>{{ payment.reference || `Payment #${payment.id}` }}</b>
+                <small>Due {{ formatDate(payment.due_date) }}</small>
               </div>
 
-              <strong>
-                {{ formatMoney(payment.amount) }}
-              </strong>
-            </div>
-
-            <div
-              v-else
-              class="owner-list-item"
-            >
-              <div>
-                <b>No payment schedule</b>
-                <small>No payments have been recorded yet.</small>
+              <div class="owner-list-end">
+                <StatusBadge :status="payment.status.charAt(0).toUpperCase() + payment.status.slice(1)" />
+                <span class="owner-money">{{ formatMoney(payment.amount) }}</span>
               </div>
             </div>
+          </div>
 
+          <div v-else class="owner-empty">
+            <h3>No payment schedule</h3>
+            <p>No payments have been recorded against this contract yet.</p>
           </div>
         </div>
       </div>

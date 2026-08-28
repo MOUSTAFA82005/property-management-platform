@@ -68,22 +68,18 @@ function statusBadge(status) {
     <!-- Summary Cards -->
     <div class="dash-stats">
       <div class="stat-card">
-        <div class="stat-icon">💳</div>
         <div class="stat-value">{{ totalPayments }}</div>
         <div class="stat-title">Total Payments</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">✅</div>
         <div class="stat-value">{{ paidCount }}</div>
         <div class="stat-title">Paid</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">⏳</div>
         <div class="stat-value">{{ pendingCount }}</div>
         <div class="stat-title">Pending</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">⚠️</div>
         <div class="stat-value">{{ overdueCount }}</div>
         <div class="stat-title">Overdue</div>
       </div>
@@ -198,143 +194,3 @@ function statusBadge(status) {
     </template>
   </CustomerDashboardLayout>
 </template>
-
-<style scoped>
-.dash-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  padding: 1.5rem;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.stat-icon {
-  font-size: 1.5rem;
-  margin-bottom: 0.75rem;
-  background: #f8fafc;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-}
-
-.stat-value {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #1a1a2e;
-  margin-bottom: 0.25rem;
-  line-height: 1;
-}
-
-.stat-title {
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.dash-toolbar {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-.toolbar-select {
-  width: auto;
-  min-width: 150px;
-}
-
-.sk-form-select.toolbar-select {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  background: #fff;
-  color: #374151;
-  outline: none;
-}
-
-.sk-form-select.toolbar-select:focus {
-  border-color: #864CFF;
-}
-
-.btn-sm {
-  padding: 0.3rem 0.7rem;
-  font-size: 0.8rem;
-}
-
-.error-box {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-}
-
-.error-box p {
-  font-size: 1rem;
-  color: #991b1b;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.error-box .error-msg {
-  font-size: 0.85rem;
-  color: #b91c1c;
-  font-weight: 400;
-  margin-bottom: 1rem;
-}
-
-.empty-box {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-}
-
-.empty-box h3 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin-bottom: 0.5rem;
-}
-
-.empty-box p {
-  color: #64748b;
-  font-size: 0.95rem;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.skel-line {
-  height: 14px;
-  width: 80%;
-  background: #e2e8f0;
-  border-radius: 4px;
-  animation: skel-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes skel-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-</style>

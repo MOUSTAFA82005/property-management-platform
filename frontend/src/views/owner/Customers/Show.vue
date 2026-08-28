@@ -105,8 +105,8 @@ onMounted(() => {
             <div class="owner-form-grid">
 
               <div class="owner-field">
-                <label>Customer ID</label>
-                <input
+                <label for="ro-customers-customer-id">Customer ID</label>
+                <input id="ro-customers-customer-id"
                   class="owner-input"
                   :value="`#${customer.id}`"
                   readonly
@@ -114,8 +114,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Full name</label>
-                <input
+                <label for="ro-customers-full-name">Full name</label>
+                <input id="ro-customers-full-name"
                   class="owner-input"
                   :value="customer.name || '-'"
                   readonly
@@ -123,8 +123,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Email</label>
-                <input
+                <label for="ro-customers-email">Email</label>
+                <input id="ro-customers-email"
                   class="owner-input"
                   :value="customer.email || '-'"
                   readonly
@@ -132,8 +132,8 @@ onMounted(() => {
               </div>
 
               <div class="owner-field">
-                <label>Phone</label>
-                <input
+                <label for="ro-customers-phone">Phone</label>
+                <input id="ro-customers-phone"
                   class="owner-input"
                   :value="customer.phone || '-'"
                   readonly
@@ -150,10 +150,9 @@ onMounted(() => {
             <h2>Contracts</h2>
           </div>
 
-          <div class="owner-list">
+          <div v-if="customer.contracts?.length" class="owner-list">
 
             <div
-              v-if="customer.contracts?.length"
               v-for="contract in customer.contracts"
               :key="contract.id"
               class="owner-list-item"
@@ -161,7 +160,7 @@ onMounted(() => {
               <div>
                 <b>
                   {{
-                    contract.unit?.building?.property?.name
+                    contract.unit?.property_name
                     || 'Property'
                   }}
                   ·
@@ -183,18 +182,11 @@ onMounted(() => {
               />
             </div>
 
-            <div
-              v-else
-              class="owner-list-item"
-            >
-              <div>
-                <b>No contracts found</b>
-                <small>
-                  This customer has no contracts yet.
-                </small>
-              </div>
-            </div>
+          </div>
 
+          <div v-else class="owner-empty">
+            <h3>No contracts found</h3>
+            <p>This customer has no contracts yet.</p>
           </div>
         </div>
 
@@ -204,7 +196,7 @@ onMounted(() => {
       <div
         v-if="customer.contracts?.length"
         class="owner-card"
-        style="margin-top: 1.5rem;"
+        
       >
         <div class="owner-card-head">
           <h2>Contract details</h2>
@@ -221,7 +213,7 @@ onMounted(() => {
 
               <small>
                 {{
-                  contract.unit?.building?.property?.name
+                  contract.unit?.property_name
                   || '-'
                 }}
                 ·

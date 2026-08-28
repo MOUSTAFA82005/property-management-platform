@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { usePaymentsStore } from '../../../stores/payments'
+import OwnerPageHeader from '../../../components/owner/OwnerPageHeader.vue'
+import StatusBadge from '../../../components/owner/StatusBadge.vue'
+import EmptyState from '../../../components/ui/EmptyState.vue'
 
 const route = useRoute()
 const paymentsStore = usePaymentsStore()
@@ -22,14 +25,23 @@ function formatCurrency(amount) {
   return 'EGP ' + num.toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function statusBadgeClass(status) {
-  const map = {
-    pending: 'sk-badge-pending',
-    paid: 'sk-badge-paid',
-    overdue: 'sk-badge-overdue',
-    cancelled: 'sk-badge-rejected',
-  }
-  return map[status] || 'sk-badge-pending'
+const METHOD_LABELS = {
+  cash: 'Cash',
+  bank_transfer: 'Bank Transfer',
+  cheque: 'Cheque',
+  credit_card: 'Credit Card',
+  instapay: 'InstaPay',
+  other: 'Other',
+}
+
+function methodLabel(method) {
+  if (!method) return '—'
+  return METHOD_LABELS[method] || method
+}
+
+function humanStatus(status) {
+  if (!status) return 'Pending'
+  return status.charAt(0).toUpperCase() + status.slice(1)
 }
 
 onMounted(async () => {
@@ -44,70 +56,75 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <RouterLink to="/owner/payments" class="sk-back">&larr; Back to Payments</RouterLink>
+  <RouterLink to="/owner/payments" class="owner-back">
+    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to Payments
+  </RouterLink>
 
-    <div class="sk-header">
-      <h1>Payment Details</h1>
-      <p>View payment record details.</p>
-    </div>
+  <OwnerPageHeader title="Payment Details" subtitle="A single payment record and the contract behind it." />
 
-    <!-- Loading -->
-    <div v-if="loading" class="sk-detail">
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-        <div v-for="n in 6" :key="n">
-          <div style="height: 12px; width: 80px; background: #e5e7eb; border-radius: 4px; margin-bottom: 0.4rem;"></div>
-          <div style="height: 18px; width: 140px; background: #e5e7eb; border-radius: 4px;"></div>
-        </div>
+  <!-- Loading -->
+  <div v-if="loading" class="owner-card owner-loading" aria-busy="true">
+    <div v-for="n in 5" :key="n" class="skel-line" style="height: 1.15rem; margin-bottom: .85rem;"></div>
+  </div>
+
+  <!-- Error -->
+  <EmptyState v-else-if="error" tone="error" title="Could not load this payment" :message="error">
+    <RouterLink to="/owner/payments" class="owner-btn owner-btn-primary">Back to Payments</RouterLink>
+  </EmptyState>
+
+  <!-- Detail -->
+  <div v-else-if="paymentsStore.payment" class="owner-card owner-form-card">
+    <div class="owner-card-head">
+      <div>
+        <h2>PAY-{{ String(paymentsStore.payment.id).padStart(4, '0') }}</h2>
+        <p>{{ formatCurrency(paymentsStore.payment.amount) }} due {{ formatDate(paymentsStore.payment.due_date) }}</p>
       </div>
+      <StatusBadge :status="humanStatus(paymentsStore.payment.status)" />
     </div>
 
-    <!-- Error -->
-    <div v-else-if="error" style="text-align: center; padding: 2rem 1rem;">
-      <div style="font-weight: 600; color: #dc2626; margin-bottom: 0.5rem;">{{ error }}</div>
-      <RouterLink to="/owner/payments" class="sk-btn sk-btn-primary">Back to Payments</RouterLink>
-    </div>
+    <div class="owner-card-body">
+      <dl class="owner-facts">
+        <div>
+          <dt>Payment ID</dt>
+          <dd>PAY-{{ String(paymentsStore.payment.id).padStart(4, '0') }}</dd>
+        </div>
+        <div>
+          <dt>Amount</dt>
+          <dd>{{ formatCurrency(paymentsStore.payment.amount) }}</dd>
+        </div>
+        <div>
+          <dt>Due Date</dt>
+          <dd>{{ formatDate(paymentsStore.payment.due_date) }}</dd>
+        </div>
+        <div>
+          <dt>Paid Date</dt>
+          <dd>{{ formatDate(paymentsStore.payment.paid_date) }}</dd>
+        </div>
+        <div>
+          <dt>Payment Method</dt>
+          <dd>{{ methodLabel(paymentsStore.payment.payment_method) }}</dd>
+        </div>
+        <div>
+          <dt>Reference</dt>
+          <dd>{{ paymentsStore.payment.reference || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Contract</dt>
+          <dd v-if="paymentsStore.payment.contract">
+            CTR-{{ String(paymentsStore.payment.contract.id).padStart(4, '0') }}
+          </dd>
+          <dd v-else>—</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd><StatusBadge :status="humanStatus(paymentsStore.payment.status)" /></dd>
+        </div>
+      </dl>
 
-    <!-- Detail -->
-    <div v-else-if="paymentsStore.payment" class="sk-detail">
-      <div class="sk-detail-grid">
-        <div class="sk-detail-item">
-          <label>Payment ID</label>
-          <span>PAY-{{ String(paymentsStore.payment.id).padStart(4, '0') }}</span>
-        </div>
-        <div class="sk-detail-item">
-          <label>Status</label>
-          <span><span class="sk-badge" :class="statusBadgeClass(paymentsStore.payment.status)">{{ paymentsStore.payment.status }}</span></span>
-        </div>
-        <div class="sk-detail-item">
-          <label>Amount</label>
-          <span>{{ formatCurrency(paymentsStore.payment.amount) }}</span>
-        </div>
-        <div class="sk-detail-item">
-          <label>Due Date</label>
-          <span>{{ formatDate(paymentsStore.payment.due_date) }}</span>
-        </div>
-        <div class="sk-detail-item">
-          <label>Paid Date</label>
-          <span>{{ formatDate(paymentsStore.payment.paid_date) }}</span>
-        </div>
-        <div class="sk-detail-item">
-          <label>Payment Method</label>
-          <span>{{ paymentsStore.payment.payment_method || '—' }}</span>
-        </div>
-        <div class="sk-detail-item">
-          <label>Reference</label>
-          <span>{{ paymentsStore.payment.reference || '—' }}</span>
-        </div>
-        <div class="sk-detail-item">
-          <label>Contract</label>
-          <span v-if="paymentsStore.payment.contract">CTR-{{ String(paymentsStore.payment.contract.id).padStart(4, '0') }}</span>
-          <span v-else>—</span>
-        </div>
-      </div>
-
-      <div v-if="paymentsStore.payment.notes" class="sk-section-title">Notes</div>
-      <p v-if="paymentsStore.payment.notes" style="font-size: 0.9rem; color: #374151; line-height: 1.6;">{{ paymentsStore.payment.notes }}</p>
+      <template v-if="paymentsStore.payment.notes">
+        <h3 class="owner-subsection">Notes</h3>
+        <p class="owner-note">{{ paymentsStore.payment.notes }}</p>
+      </template>
     </div>
   </div>
 </template>

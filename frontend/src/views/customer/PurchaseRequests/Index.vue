@@ -82,7 +82,7 @@ const rejectedCount = computed(() => store.purchaseRequests.filter((r) => ['reje
       <div class="empty-icon">📋</div>
       <h3>No purchase requests yet</h3>
       <p>Browse available properties and submit a purchase request to get started.</p>
-      <RouterLink to="/properties" class="sk-btn sk-btn-primary" style="display: inline-block; margin-top: 1rem;">Browse Properties</RouterLink>
+      <RouterLink to="/properties" class="sk-btn sk-btn-primary">Browse Properties</RouterLink>
     </div>
 
     <!-- Table -->
@@ -101,7 +101,7 @@ const rejectedCount = computed(() => store.purchaseRequests.filter((r) => ['reje
         <tbody>
           <tr v-for="req in store.purchaseRequests" :key="req.id">
             <td><strong>REQ-{{ String(req.id).padStart(4, '0') }}</strong></td>
-            <td>{{ req.unit?.property?.name || req.property?.name || '—' }}</td>
+            <td>{{ req.unit?.property_name || '—' }}</td>
             <td>{{ req.unit?.unit_number || '—' }}</td>
             <td>{{ formatDate(req.created_at) }}</td>
             <td>
@@ -116,71 +116,3 @@ const rejectedCount = computed(() => store.purchaseRequests.filter((r) => ['reje
     </div>
   </CustomerDashboardLayout>
 </template>
-
-<style scoped>
-.dash-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.75rem;
-}
-
-.stat-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  padding: 1.25rem;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.stat-value {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #1a1a2e;
-  line-height: 1;
-}
-
-.stat-title {
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.stat-card-green .stat-value { color: #059669; }
-.stat-card-amber .stat-value { color: #d97706; }
-.stat-card-red   .stat-value { color: #dc2626; }
-
-.empty-box h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin-bottom: 0.5rem;
-}
-
-.empty-box p {
-  color: #64748b;
-  font-size: 0.9rem;
-  max-width: 380px;
-  margin: 0 auto;
-}
-
-.btn-sm {
-  padding: 0.3rem 0.7rem;
-  font-size: 0.8rem;
-}
-
-.skel-line {
-  height: 14px;
-  width: 80%;
-  background: #e2e8f0;
-  border-radius: 4px;
-  animation: skel-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes skel-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-</style>

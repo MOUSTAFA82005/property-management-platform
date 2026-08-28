@@ -63,7 +63,7 @@ async function handleLogout() {
 
         <div class="sidebar-divider"></div>
 
-        <RouterLink to="/" class="sidebar-link sidebar-link-muted">
+        <RouterLink to="/" class="sidebar-link sidebar-link-muted" active-class="" exact-active-class="router-link-active">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
           Back to Home
         </RouterLink>
@@ -83,15 +83,14 @@ async function handleLogout() {
 
 <style scoped>
 .account-dashboard {
-  background: #f8fafc;
+  background: var(--canvas);
   min-height: calc(100vh - 68px);
-  padding-top: 68px;
   padding-bottom: 3rem;
 }
 
 /* Profile Header */
 .profile-header-bar {
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d1b69 100%);
+  background: linear-gradient(135deg, #14141F 0%, #2A1A6E 100%);
   padding: 1.75rem 1.5rem;
   margin-bottom: 2rem;
 }
@@ -108,7 +107,7 @@ async function handleLogout() {
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #864CFF, #6B2FFF);
+  background: linear-gradient(135deg, #5B3FE0, #3D279E);
   color: #fff;
   font-size: 1.2rem;
   font-weight: 700;
@@ -117,7 +116,7 @@ async function handleLogout() {
   justify-content: center;
   flex-shrink: 0;
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 16px rgba(134, 76, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(91, 63, 224, 0.4);
 }
 
 .profile-info {
@@ -153,14 +152,14 @@ async function handleLogout() {
 .profile-badge {
   display: inline-block;
   padding: 0.3rem 0.85rem;
-  background: rgba(134, 76, 255, 0.3);
-  color: #c4a0ff;
+  background: rgba(91, 63, 224, 0.3);
+  color: #BEADFA;
   font-size: 0.75rem;
   font-weight: 700;
   border-radius: 100px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border: 1px solid rgba(134, 76, 255, 0.4);
+  border: 1px solid rgba(91, 63, 224, 0.4);
 }
 
 /* Layout */
@@ -210,9 +209,9 @@ async function handleLogout() {
 
 .sidebar-link:hover,
 .sidebar-link.router-link-active {
-  background: rgba(134, 76, 255, 0.06);
-  color: #864CFF;
-  border-left-color: #864CFF;
+  background: rgba(91, 63, 224, 0.06);
+  color: #5B3FE0;
+  border-left-color: #5B3FE0;
 }
 
 .sidebar-link svg {
@@ -297,7 +296,7 @@ async function handleLogout() {
   .sidebar-link:hover,
   .sidebar-link.router-link-active {
     border-left-color: transparent;
-    border-bottom-color: #864CFF;
+    border-bottom-color: #5B3FE0;
   }
 
   .sidebar-link-danger:hover {

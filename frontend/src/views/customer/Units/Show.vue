@@ -54,7 +54,7 @@ onMounted(load)
     <div v-else-if="store.error" class="empty-box empty-box-error">
       <h3>Could not load this unit</h3>
       <p>{{ store.error }}</p>
-      <RouterLink to="/properties" class="sk-btn sk-btn-primary" style="display: inline-block; margin-top: 1rem;">
+      <RouterLink to="/properties" class="sk-btn sk-btn-primary">
         Browse Properties
       </RouterLink>
     </div>
@@ -72,31 +72,31 @@ onMounted(load)
 
       <div class="sk-detail-grid">
         <div class="sk-detail-item">
-          <label>Monthly Rent</label>
+          <span class="sk-detail-label">Monthly Rent</span>
           <span>{{ formatMoney(unit.monthly_rent) }}</span>
         </div>
         <div class="sk-detail-item">
-          <label>Type</label>
+          <span class="sk-detail-label">Type</span>
           <span>{{ unit.unit_type }}</span>
         </div>
         <div class="sk-detail-item">
-          <label>Area</label>
+          <span class="sk-detail-label">Area</span>
           <span>{{ unit.area ? unit.area + ' m²' : '—' }}</span>
         </div>
         <div class="sk-detail-item">
-          <label>Floor</label>
+          <span class="sk-detail-label">Floor</span>
           <span>{{ unit.floor }}</span>
         </div>
         <div class="sk-detail-item">
-          <label>Bedrooms</label>
+          <span class="sk-detail-label">Bedrooms</span>
           <span>{{ unit.bedrooms }}</span>
         </div>
         <div class="sk-detail-item">
-          <label>Bathrooms</label>
+          <span class="sk-detail-label">Bathrooms</span>
           <span>{{ unit.bathrooms }}</span>
         </div>
         <div class="sk-detail-item">
-          <label>Availability</label>
+          <span class="sk-detail-label">Availability</span>
           <span class="sk-badge" :class="statusBadgeClass(unit.status)">{{ humanStatus(unit.status) }}</span>
         </div>
       </div>
@@ -107,7 +107,7 @@ onMounted(load)
         </button>
       </div>
 
-      <p v-else-if="authStore.isCustomer()" style="margin-top: 2rem; color: #6b7280; font-size: 0.9rem;">
+      <p v-else-if="authStore.isCustomer()" class="notes-text" style="margin-top: 2rem;">
         This unit is currently {{ humanStatus(unit.status).toLowerCase() }} and cannot be requested.
       </p>
 

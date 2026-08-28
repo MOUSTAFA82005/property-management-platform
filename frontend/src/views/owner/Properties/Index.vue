@@ -108,7 +108,7 @@ onMounted(() => load())
       <div class="empty-icon">🏢</div>
       <h3>No properties yet</h3>
       <p>Add your first property to start building your portfolio.</p>
-      <RouterLink to="/owner/properties/create" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+      <RouterLink to="/owner/properties/create" class="owner-btn owner-btn-primary">
         Add Property
       </RouterLink>
     </div>

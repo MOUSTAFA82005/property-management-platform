@@ -57,7 +57,7 @@ onMounted(load)
     <div v-else-if="store.error" class="empty-box empty-box-error">
       <h3>Could not load this property</h3>
       <p>{{ store.error }}</p>
-      <RouterLink to="/properties" class="sk-btn sk-btn-primary" style="display: inline-block; margin-top: 1rem;">
+      <RouterLink to="/properties" class="sk-btn sk-btn-primary">
         Back to Properties
       </RouterLink>
     </div>
@@ -72,22 +72,22 @@ onMounted(load)
 
       <div class="sk-detail-grid">
         <div class="sk-detail-item">
-          <label>Starting Rent</label>
+          <span class="sk-detail-label">Starting Rent</span>
           <span>{{ property.from_price ? formatMoney(property.from_price) + ' / month' : '—' }}</span>
         </div>
         <div class="sk-detail-item">
-          <label>Availability</label>
+          <span class="sk-detail-label">Availability</span>
           <span>{{ property.available_units_count }} of {{ property.units_count }} units</span>
         </div>
         <div class="sk-detail-item">
-          <label>Buildings</label>
+          <span class="sk-detail-label">Buildings</span>
           <span>{{ property.buildings_count }}</span>
         </div>
       </div>
 
       <template v-if="property.description">
         <h3 class="sk-section-title">Description</h3>
-        <p style="color: #6b7280; font-size: 0.925rem; line-height: 1.6;">{{ property.description }}</p>
+        <p class="notes-text">{{ property.description }}</p>
       </template>
 
       <div class="sk-toolbar" style="margin-top: 2rem;">

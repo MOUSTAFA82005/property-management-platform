@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import AuthShell from '../../components/auth/AuthShell.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -50,19 +51,9 @@ async function doRegister() {
 </script>
 
 <template>
-  <div class="sk-page" style="display: flex; align-items: center; justify-content: center; min-height: 80vh;">
-    <form class="sk-form" style="width: 100%; max-width: 400px; padding: 2rem;" @submit.prevent="doRegister">
-      <div class="sk-header" style="text-align: center; border: none;">
-        <h1>Create Account</h1>
-        <p>Join PropSpace today</p>
-      </div>
-
-      <div
-        v-if="generalError"
-        style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.875rem;"
-      >
-        {{ generalError }}
-      </div>
+  <AuthShell title="Create your account" subtitle="Join PropSpace to browse properties and manage your requests.">
+    <form class="auth-form" @submit.prevent="doRegister">
+      <div v-if="generalError" class="sk-alert-error" role="alert">{{ generalError }}</div>
 
       <div class="sk-form-group">
         <label class="sk-form-label" for="name">Full Name</label>
@@ -71,6 +62,7 @@ async function doRegister() {
           v-model="form.name"
           type="text"
           class="sk-form-input"
+          :class="{ 'is-invalid': fieldError('name') }"
           autocomplete="name"
           placeholder="Your full name"
         />
@@ -84,6 +76,7 @@ async function doRegister() {
           v-model="form.email"
           type="email"
           class="sk-form-input"
+          :class="{ 'is-invalid': fieldError('email') }"
           autocomplete="email"
           placeholder="name@example.com"
         />
@@ -91,12 +84,13 @@ async function doRegister() {
       </div>
 
       <div class="sk-form-group">
-        <label class="sk-form-label" for="phone">Phone <span style="color: #9ca3af; font-weight: 400;">(optional)</span></label>
+        <label class="sk-form-label" for="phone">Phone <span class="sk-form-optional">(optional)</span></label>
         <input
           id="phone"
           v-model="form.phone"
           type="tel"
           class="sk-form-input"
+          :class="{ 'is-invalid': fieldError('phone') }"
           autocomplete="tel"
           placeholder="01012345678"
         />
@@ -110,6 +104,7 @@ async function doRegister() {
           v-model="form.password"
           type="password"
           class="sk-form-input"
+          :class="{ 'is-invalid': fieldError('password') }"
           autocomplete="new-password"
           placeholder="At least 8 characters"
         />
@@ -128,21 +123,14 @@ async function doRegister() {
         />
       </div>
 
-      <div class="sk-form-actions" style="margin-top: 1.5rem;">
-        <button
-          type="submit"
-          class="sk-btn sk-btn-primary"
-          style="width: 100%; justify-content: center;"
-          :disabled="loading"
-        >
-          {{ loading ? 'Creating account...' : 'Register' }}
-        </button>
-      </div>
+      <button type="submit" class="sk-btn sk-btn-primary auth-submit" :disabled="loading">
+        {{ loading ? 'Creating account...' : 'Register' }}
+      </button>
 
-      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: #6b7280;">
+      <p class="auth-alt">
         Already have an account?
-        <RouterLink to="/login" style="color: #864CFF; font-weight: 600;">Login here</RouterLink>
+        <RouterLink to="/login">Login here</RouterLink>
       </p>
     </form>
-  </div>
+  </AuthShell>
 </template>

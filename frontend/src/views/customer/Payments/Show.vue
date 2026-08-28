@@ -74,35 +74,35 @@ function statusBadge(status) {
         <h3 class="section-title">Payment Information</h3>
         <div class="detail-grid">
           <div class="detail-item">
-            <label>Payment ID</label>
+            <span class="sk-detail-label">Payment ID</span>
             <span>PAY-{{ String(paymentsStore.payment.id).padStart(4, '0') }}</span>
           </div>
           <div class="detail-item">
-            <label>Amount</label>
+            <span class="sk-detail-label">Amount</span>
             <span class="amount-value">{{ formatCurrency(paymentsStore.payment.amount) }}</span>
           </div>
           <div class="detail-item">
-            <label>Due Date</label>
+            <span class="sk-detail-label">Due Date</span>
             <span>{{ formatDate(paymentsStore.payment.due_date) }}</span>
           </div>
           <div class="detail-item">
-            <label>Paid Date</label>
+            <span class="sk-detail-label">Paid Date</span>
             <span>{{ formatDate(paymentsStore.payment.paid_date) }}</span>
           </div>
           <div class="detail-item">
-            <label>Payment Method</label>
+            <span class="sk-detail-label">Payment Method</span>
             <span>{{ paymentsStore.payment.payment_method ? paymentsStore.payment.payment_method.charAt(0).toUpperCase() + paymentsStore.payment.payment_method.slice(1).replace('_', ' ') : '—' }}</span>
           </div>
           <div class="detail-item">
-            <label>Status</label>
+            <span class="sk-detail-label">Status</span>
             <span><span class="sk-badge" :class="statusBadge(paymentsStore.payment.status)">{{ paymentsStore.payment.status }}</span></span>
           </div>
           <div class="detail-item">
-            <label>Reference</label>
+            <span class="sk-detail-label">Reference</span>
             <span>{{ paymentsStore.payment.reference || '—' }}</span>
           </div>
           <div class="detail-item">
-            <label>Created</label>
+            <span class="sk-detail-label">Created</span>
             <span>{{ formatDate(paymentsStore.payment.created_at) }}</span>
           </div>
         </div>
@@ -118,27 +118,27 @@ function statusBadge(status) {
         <h3 class="section-title">Contract Information</h3>
         <div class="detail-grid">
           <div class="detail-item">
-            <label>Contract ID</label>
+            <span class="sk-detail-label">Contract ID</span>
             <span>CTR-{{ String(paymentsStore.payment.contract.id).padStart(4, '0') }}</span>
           </div>
           <div class="detail-item">
-            <label>Contract Status</label>
+            <span class="sk-detail-label">Contract Status</span>
             <span><span class="sk-badge" :class="paymentsStore.payment.contract.status === 'active' ? 'sk-badge-active' : 'sk-badge-rejected'">{{ paymentsStore.payment.contract.status }}</span></span>
           </div>
           <div class="detail-item">
-            <label>Monthly Rent</label>
+            <span class="sk-detail-label">Monthly Rent</span>
             <span>{{ formatCurrency(paymentsStore.payment.contract.monthly_rent) }}</span>
           </div>
           <div class="detail-item">
-            <label>Security Deposit</label>
+            <span class="sk-detail-label">Security Deposit</span>
             <span>{{ formatCurrency(paymentsStore.payment.contract.security_deposit) }}</span>
           </div>
           <div class="detail-item">
-            <label>Start Date</label>
+            <span class="sk-detail-label">Start Date</span>
             <span>{{ formatDate(paymentsStore.payment.contract.start_date) }}</span>
           </div>
           <div class="detail-item">
-            <label>End Date</label>
+            <span class="sk-detail-label">End Date</span>
             <span>{{ formatDate(paymentsStore.payment.contract.end_date) }}</span>
           </div>
         </div>
@@ -149,35 +149,35 @@ function statusBadge(status) {
         <h3 class="section-title">Unit Information</h3>
         <div class="detail-grid">
           <div class="detail-item">
-            <label>Unit Number</label>
+            <span class="sk-detail-label">Unit Number</span>
             <span>{{ paymentsStore.payment.contract.unit.unit_number }}</span>
           </div>
           <div class="detail-item">
-            <label>Unit Type</label>
+            <span class="sk-detail-label">Unit Type</span>
             <span>{{ paymentsStore.payment.contract.unit.unit_type }}</span>
           </div>
           <div class="detail-item">
-            <label>Floor</label>
+            <span class="sk-detail-label">Floor</span>
             <span>{{ paymentsStore.payment.contract.unit.floor }}</span>
           </div>
           <div class="detail-item">
-            <label>Area</label>
+            <span class="sk-detail-label">Area</span>
             <span>{{ paymentsStore.payment.contract.unit.area ? paymentsStore.payment.contract.unit.area + ' m²' : '—' }}</span>
           </div>
           <div class="detail-item">
-            <label>Bedrooms</label>
+            <span class="sk-detail-label">Bedrooms</span>
             <span>{{ paymentsStore.payment.contract.unit.bedrooms }}</span>
           </div>
           <div class="detail-item">
-            <label>Bathrooms</label>
+            <span class="sk-detail-label">Bathrooms</span>
             <span>{{ paymentsStore.payment.contract.unit.bathrooms }}</span>
           </div>
           <div class="detail-item">
-            <label>Monthly Rent</label>
+            <span class="sk-detail-label">Monthly Rent</span>
             <span>{{ formatCurrency(paymentsStore.payment.contract.unit.monthly_rent) }}</span>
           </div>
           <div class="detail-item">
-            <label>Status</label>
+            <span class="sk-detail-label">Status</span>
             <span><span class="sk-badge" :class="paymentsStore.payment.contract.unit.status === 'occupied' ? 'sk-badge-active' : 'sk-badge-available'">{{ paymentsStore.payment.contract.unit.status }}</span></span>
           </div>
         </div>
@@ -185,139 +185,3 @@ function statusBadge(status) {
     </template>
   </CustomerDashboardLayout>
 </template>
-
-<style scoped>
-.sk-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #864CFF;
-  text-decoration: none;
-  margin-bottom: 1.5rem;
-}
-
-.sk-back:hover {
-  text-decoration: underline;
-}
-
-.section-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin-bottom: 1rem;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.25rem;
-}
-
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.detail-item label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.detail-item span {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.amount-value {
-  font-size: 1.15rem !important;
-  font-weight: 800 !important;
-  color: #864CFF !important;
-}
-
-.detail-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #f1f5f9;
-}
-
-.notes-text {
-  font-size: 0.95rem;
-  color: #475569;
-  line-height: 1.6;
-  background: #f8fafc;
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.error-box {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-}
-
-.error-box p {
-  font-size: 1rem;
-  color: #991b1b;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.error-box .error-msg {
-  font-size: 0.85rem;
-  color: #b91c1c;
-  font-weight: 400;
-  margin-bottom: 1rem;
-}
-
-.empty-box {
-  text-align: center;
-  padding: 3rem 1rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-}
-
-.empty-box h3 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin-bottom: 0.5rem;
-}
-
-.empty-box p {
-  color: #64748b;
-  font-size: 0.95rem;
-}
-
-.skel-label {
-  height: 12px;
-  width: 60px;
-  background: #e2e8f0;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-  animation: skel-pulse 1.5s ease-in-out infinite;
-}
-
-.skel-value {
-  height: 18px;
-  width: 120px;
-  background: #e2e8f0;
-  border-radius: 4px;
-  animation: skel-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes skel-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-</style>

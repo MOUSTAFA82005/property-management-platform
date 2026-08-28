@@ -138,7 +138,7 @@ async function save() {
       <div class="empty-icon">🏗️</div>
       <h3>You need a building first</h3>
       <p>Units belong to a building. Create one, then come back.</p>
-      <RouterLink to="/owner/buildings/create" class="owner-btn owner-btn-primary" style="display: inline-block; margin-top: 1rem;">
+      <RouterLink to="/owner/buildings/create" class="owner-btn owner-btn-primary">
         Add Building
       </RouterLink>
     </div>
